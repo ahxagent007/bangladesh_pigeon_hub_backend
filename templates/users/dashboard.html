@@ -1,23 +1,26 @@
 {% extends 'base.html' %}
-{% block title %}Dashboard — BPH{% endblock %}
+{% load messaging_tags %}
+{% block title %}Dashboard — PigeonMarket{% endblock %}
 {% block content %}
 <div class="container">
   <div class="dashboard-layout">
 
     <!-- Sidebar Nav -->
     <nav class="sidebar-nav card" style="padding:12px;height:fit-content;">
-      <a href="/dashboard/"           class="active">🏠 Overview</a>
-      <a href="/dashboard/pigeons/">  🐦 My Pigeons</a>
-      <a href="/marketplace/mine/">   📋 My Listings</a>
-      <a href="/messages/">           💬 Messages</a>
-      <a href="/dashboard/profile/">  ⚙️ Profile</a>
+      <a href="/dashboard/" class="active">🏠 Overview</a>
+      <a href="/dashboard/pigeons/">🐦 My Pigeons</a>
+      <a href="/marketplace/mine/">📋 My Listings</a>
+      <a href="/messages/">💬 Messages</a>
+      <a href="/dashboard/profile/">⚙️ Profile</a>
       <hr style="border:none;border-top:1px solid var(--border);margin:8px 0;">
-      <a href="/marketplace/add/">    ➕ Add Listing</a>
+      <a href="/marketplace/add/">➕ Add Listing</a>
     </nav>
 
     <!-- Main Area -->
     <div>
-      <h2 style="margin-bottom:20px;">Welcome back, {{ user.first_name|default:user.username }}!</h2>
+      <h2 style="margin-bottom:20px;">
+        Welcome back, {{ user.first_name|default:user.username }}!
+      </h2>
 
       <!-- Stats -->
       <div class="stat-grid">
@@ -38,27 +41,72 @@
       <!-- Recent Conversations -->
       <div class="card" style="padding:20px;">
         <h3 style="margin-bottom:16px;font-size:16px;">Recent Messages</h3>
+
         {% if recent_conversations %}
           {% for conv in recent_conversations %}
-            {% with other=conv.get_other_participant(request.user) last=conv.last_message %}
-            <a href="/messages/{{ conv.id }}/" class="chat-item" style="border-radius:var(--radius);">
-              <span class="avatar-placeholder" style="min-width:36px;height:36px;">
-                {{ other.username|first|upper }}
-              </span>
-              <div>
-                <div class="chat-name">{{ other.username }}</div>
-                <div class="chat-preview">{{ last.body|truncatechars:40 }}</div>
-              </div>
-            </a>
+            {% with other=conv|other_participant:user last=conv.last_message %}
+              {% if other %}
+                <a href="/messages/{{ conv.id }}/"
+                   style="text-decoration:none;color:inherit;display:flex;
+                          align-items:center;gap:12px;padding:12px;
+                          border-radius:var(--radius);margin-bottom:4px;
+                          border:1px solid var(--border);"
+                   onmouseover="this.style.background='var(--bg)'"
+                   onmouseout="this.style.background=''">
+
+                  <!-- Avatar -->
+                  <div style="width:38px;height:38px;border-radius:50%;
+                       background:var(--primary);color:#fff;display:flex;
+                       align-items:center;justify-content:center;
+                       font-weight:700;font-size:16px;flex-shrink:0;">
+                    {{ other.username|first|upper }}
+                  </div>
+
+                  <!-- Content -->
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:14px;">
+                      {{ other.username }}
+                    </div>
+                    {% if last %}
+                      <div style="font-size:13px;color:var(--text-muted);
+                                  white-space:nowrap;overflow:hidden;
+                                  text-overflow:ellipsis;">
+                        {% if last.sender == user %}You: {% endif %}
+                        {{ last.body|truncatechars:50 }}
+                      </div>
+                    {% else %}
+                      <div style="font-size:13px;color:var(--text-muted);">
+                        No messages yet
+                      </div>
+                    {% endif %}
+                  </div>
+
+                  <!-- Time -->
+                  {% if last %}
+                    <div style="font-size:12px;color:var(--text-muted);
+                                flex-shrink:0;">
+                      {{ last.created_at|timesince }} ago
+                    </div>
+                  {% endif %}
+
+                </a>
+              {% endif %}
             {% endwith %}
           {% endfor %}
+
         {% else %}
-          <p style="color:var(--text-muted);font-size:14px;">No messages yet.</p>
+          <p style="color:var(--text-muted);font-size:14px;padding:20px 0;">
+            No messages yet.
+          </p>
         {% endif %}
-        <a href="/messages/" class="btn-outline btn-sm" style="margin-top:12px;">
+
+        <a href="/messages/"
+           class="btn-outline btn-sm"
+           style="margin-top:12px;display:inline-block;">
           View all messages
         </a>
       </div>
+
     </div>
   </div>
 </div>

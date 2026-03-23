@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
-{% block title %}Messages — BPH{% endblock %}
+{% load messaging_tags %}
+{% block title %}Messages — PigeonMarket{% endblock %}
 {% block content %}
 <div class="container section">
   <h1 class="section-title">Messages</h1>
@@ -7,56 +8,59 @@
   {% if conversations %}
     <div class="card" style="overflow:hidden;max-width:680px;">
       {% for conv in conversations %}
-        {% with other=conv.get_other_participant last=conv.last_message %}
-        <a href="/messages/{{ conv.id }}/"
-           style="text-decoration:none;color:inherit;display:flex;
-                  align-items:center;gap:14px;padding:16px;
-                  border-bottom:1px solid var(--border);"
-           onmouseover="this.style.background='var(--bg)'"
-           onmouseout="this.style.background=''">
+        {% with other=conv|other_participant:user last=conv.last_message %}
+          {% if other %}
+            <a href="/messages/{{ conv.id }}/"
+               style="text-decoration:none;color:inherit;display:flex;
+                      align-items:center;gap:14px;padding:16px;
+                      border-bottom:1px solid var(--border);"
+               onmouseover="this.style.background='var(--bg)'"
+               onmouseout="this.style.background=''">
 
-          <!-- Avatar -->
-          <div style="width:46px;height:46px;border-radius:50%;
-               background:var(--primary);color:#fff;display:flex;
-               align-items:center;justify-content:center;
-               font-weight:700;font-size:18px;flex-shrink:0;">
-            {{ other.username|first|upper }}
-          </div>
-
-          <!-- Content -->
-          <div style="flex:1;min-width:0;">
-            <div style="display:flex;justify-content:space-between;
-                        align-items:baseline;">
-              <div style="font-weight:600;font-size:15px;">
-                {{ other.username }}
+              <!-- Avatar -->
+              <div style="width:46px;height:46px;border-radius:50%;
+                   background:var(--primary);color:#fff;display:flex;
+                   align-items:center;justify-content:center;
+                   font-weight:700;font-size:18px;flex-shrink:0;">
+                {{ other.username|first|upper }}
               </div>
-              {% if last %}
-                <div style="font-size:12px;color:var(--text-muted);
-                            flex-shrink:0;margin-left:8px;">
-                  {{ last.created_at|timesince }} ago
+
+              <!-- Content -->
+              <div style="flex:1;min-width:0;">
+                <div style="display:flex;justify-content:space-between;
+                            align-items:baseline;">
+                  <div style="font-weight:600;font-size:15px;">
+                    {{ other.username }}
+                  </div>
+                  {% if last %}
+                    <div style="font-size:12px;color:var(--text-muted);
+                                flex-shrink:0;margin-left:8px;">
+                      {{ last.created_at|timesince }} ago
+                    </div>
+                  {% endif %}
                 </div>
-              {% endif %}
-            </div>
-            {% if conv.listing %}
-              <div style="font-size:12px;color:var(--primary);margin-bottom:2px;">
-                Re: {{ conv.listing.title|truncatechars:40 }}
+                {% if conv.listing %}
+                  <div style="font-size:12px;color:var(--primary);margin-bottom:2px;">
+                    Re: {{ conv.listing.title|truncatechars:40 }}
+                  </div>
+                {% endif %}
+                {% if last %}
+                  <div style="font-size:13px;color:var(--text-muted);
+                              white-space:nowrap;overflow:hidden;
+                              text-overflow:ellipsis;">
+                    {% if last.sender == user %}You: {% endif %}
+                    {{ last.body|truncatechars:60 }}
+                  </div>
+                {% else %}
+                  <div style="font-size:13px;color:var(--text-muted);">
+                    No messages yet
+                  </div>
+                {% endif %}
               </div>
-            {% endif %}
-            {% if last %}
-              <div style="font-size:13px;color:var(--text-muted);
-                          white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                {% if last.sender == request.user %}You: {% endif %}
-                {{ last.body|truncatechars:60 }}
-              </div>
-            {% else %}
-              <div style="font-size:13px;color:var(--text-muted);">
-                No messages yet
-              </div>
-            {% endif %}
-          </div>
 
-          <div style="color:var(--text-muted);">›</div>
-        </a>
+              <div style="color:var(--text-muted);">›</div>
+            </a>
+          {% endif %}
         {% endwith %}
       {% endfor %}
     </div>
@@ -64,7 +68,9 @@
   {% else %}
     <div class="card" style="padding:60px;text-align:center;max-width:480px;">
       <p style="font-size:48px;margin-bottom:16px;">💬</p>
-      <p style="font-size:18px;font-weight:600;margin-bottom:8px;">No messages yet</p>
+      <p style="font-size:18px;font-weight:600;margin-bottom:8px;">
+        No messages yet
+      </p>
       <p style="color:var(--text-muted);margin-bottom:24px;">
         Contact a seller from any listing to start a conversation.
       </p>

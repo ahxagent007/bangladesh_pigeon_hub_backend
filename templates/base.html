@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}BD Pigeon Hub{% endblock %}</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'css/main.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="navbar">
+    <div class="container nav-inner">
+      <a href="/" class="logo">🐦 BD Pigeon Hub</a>
+
+      <div class="nav-search">
+        <form action="/marketplace/" method="get">
+          <input type="text" name="q" placeholder="Search pigeons..." value="{{ request.GET.q }}">
+          <button type="submit">Search</button>
+        </form>
+      </div>
+
+      <div class="nav-links">
+        <a href="/marketplace/">Browse</a>
+        <a href="/pedigree/">Pedigree</a>
+        <a href="/feed/">Feed Guide</a>
+        {% if user.is_authenticated %}
+          <a href="/marketplace/add/" class="btn-primary">+ List Pigeon</a>
+          <div class="nav-user">
+            <a href="/dashboard/">
+              {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" class="avatar-sm" alt="">
+              {% else %}
+                <span class="avatar-placeholder">{{ user.username|first|upper }}</span>
+              {% endif %}
+            </a>
+            <div class="dropdown">
+              <a href="/dashboard/">Dashboard</a>
+              <a href="/dashboard/pigeons/">My Pigeons</a>
+              <a href="/messages/">Messages
+                {% if unread_count %}<span class="badge">{{ unread_count }}</span>{% endif %}
+              </a>
+              <a href="/auth/logout/">Logout</a>
+            </div>
+          </div>
+        {% else %}
+          <a href="/auth/login/" class="btn-outline">Login</a>
+          <a href="/auth/register/" class="btn-primary">Join Free</a>
+        {% endif %}
+      </div>
+
+      <button class="hamburger" onclick="toggleMobileNav()">☰</button>
+    </div>
+  </nav>
+
+  <!-- Mobile Nav -->
+  <div class="mobile-nav" id="mobileNav">
+    <a href="/marketplace/">Browse Listings</a>
+    <a href="/pedigree/">Pedigree</a>
+    <a href="/feed/">Feed Guide</a>
+    {% if user.is_authenticated %}
+      <a href="/dashboard/">Dashboard</a>
+      <a href="/marketplace/add/">+ Add Listing</a>
+      <a href="/messages/">Messages</a>
+      <a href="/auth/logout/">Logout</a>
+    {% else %}
+      <a href="/auth/login/">Login</a>
+      <a href="/auth/register/">Register</a>
+    {% endif %}
+  </div>
+
+  <!-- Flash Messages -->
+  {% if messages %}
+    <div class="flash-messages">
+      {% for message in messages %}
+        <div class="flash flash-{{ message.tags }}">
+          {{ message }}
+          <button onclick="this.parentElement.remove()">×</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Main Content -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <h4>🐦 BD Pigeon Hub</h4>
+          <p>The #1 platform for pigeon enthusiasts.</p>
+        </div>
+        <div>
+          <h4>Explore</h4>
+          <a href="/marketplace/">Marketplace</a>
+          <a href="/pedigree/">Pedigrees</a>
+          <a href="/feed/">Feed Generator</a>
+        </div>
+        <div>
+          <h4>Account</h4>
+          <a href="/dashboard/">Dashboard</a>
+          <a href="/auth/login/">Login</a>
+          <a href="/auth/register/">Register</a>
+        </div>
+      </div>
+      <p class="footer-copy">&copy; 2026 BD Pigeon Hub. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="{% static 'js/main.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

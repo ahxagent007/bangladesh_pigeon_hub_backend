@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard — BPH{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="dashboard-layout">
+
+    <!-- Sidebar Nav -->
+    <nav class="sidebar-nav card" style="padding:12px;height:fit-content;">
+      <a href="/dashboard/"           class="active">🏠 Overview</a>
+      <a href="/dashboard/pigeons/">  🐦 My Pigeons</a>
+      <a href="/marketplace/mine/">   📋 My Listings</a>
+      <a href="/messages/">           💬 Messages</a>
+      <a href="/dashboard/profile/">  ⚙️ Profile</a>
+      <hr style="border:none;border-top:1px solid var(--border);margin:8px 0;">
+      <a href="/marketplace/add/">    ➕ Add Listing</a>
+    </nav>
+
+    <!-- Main Area -->
+    <div>
+      <h2 style="margin-bottom:20px;">Welcome back, {{ user.first_name|default:user.username }}!</h2>
+
+      <!-- Stats -->
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-num">{{ pigeon_count }}</div>
+          <div class="stat-label">My Pigeons</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">{{ listing_count }}</div>
+          <div class="stat-label">Active Listings</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num">{{ unread_count }}</div>
+          <div class="stat-label">New Messages</div>
+        </div>
+      </div>
+
+      <!-- Recent Conversations -->
+      <div class="card" style="padding:20px;">
+        <h3 style="margin-bottom:16px;font-size:16px;">Recent Messages</h3>
+        {% if recent_conversations %}
+          {% for conv in recent_conversations %}
+            {% with other=conv.get_other_participant(request.user) last=conv.last_message %}
+            <a href="/messages/{{ conv.id }}/" class="chat-item" style="border-radius:var(--radius);">
+              <span class="avatar-placeholder" style="min-width:36px;height:36px;">
+                {{ other.username|first|upper }}
+              </span>
+              <div>
+                <div class="chat-name">{{ other.username }}</div>
+                <div class="chat-preview">{{ last.body|truncatechars:40 }}</div>
+              </div>
+            </a>
+            {% endwith %}
+          {% endfor %}
+        {% else %}
+          <p style="color:var(--text-muted);font-size:14px;">No messages yet.</p>
+        {% endif %}
+        <a href="/messages/" class="btn-outline btn-sm" style="margin-top:12px;">
+          View all messages
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

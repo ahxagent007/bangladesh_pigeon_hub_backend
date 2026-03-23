@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}Chat with {{ other.username }} — BPH{% endblock %}
+
+{% block extra_css %}
+<style>
+  main { padding: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-layout" style="height:calc(100vh - 60px);">
+
+  <!-- Sidebar -->
+  <div class="chat-sidebar">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);
+                font-weight:600;font-size:15px;">
+      💬 Messages
+    </div>
+    {% for conv in request.user.conversations.all %}
+      {% with o=conv.get_other_participant last=conv.last_message %}
+      <a href="/messages/{{ conv.id }}/"
+         class="chat-item {% if conv.id == conversation.id %}active{% endif %}">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--primary);
+             color:#fff;display:flex;align-items:center;justify-content:center;
+             font-weight:700;flex-shrink:0;">
+          {{ o.username|first|upper }}
+        </div>
+        <div style="min-width:0;">
+          <div class="chat-name">{{ o.username }}</div>
+          {% if last %}
+            <div class="chat-preview">{{ last.body|truncatechars:30 }}</div>
+          {% endif %}
+        </div>
+      </a>
+      {% endwith %}
+    {% empty %}
+      <div style="padding:20px;color:var(--text-muted);font-size:13px;
+                  text-align:center;">No conversations</div>
+    {% endfor %}
+  </div>
+
+  <!-- Main Chat -->
+  <div class="chat-main">
+
+    <!-- Header -->
+    <div style="padding:14px 20px;border-bottom:1px solid var(--border);
+                display:flex;align-items:center;gap:12px;background:var(--surface);">
+      <div style="width:38px;height:38px;border-radius:50%;background:var(--primary);
+           color:#fff;display:flex;align-items:center;justify-content:center;
+           font-weight:700;">
+        {{ other.username|first|upper }}
+      </div>
+      <div>
+        <div style="font-weight:600;">{{ other.username }}</div>
+        {% if conversation.listing %}
+          <div style="font-size:12px;color:var(--text-muted);">
+            Re:
+            <a href="/marketplace/{{ conversation.listing.id }}/"
+               style="color:var(--primary);">
+              {{ conversation.listing.title|truncatechars:40 }}
+            </a>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-messages" id="chatMessages">
+      {% for message in messages %}
+        <div style="display:flex;flex-direction:column;
+             align-items:{% if message.sender == request.user %}flex-end{% else %}flex-start{% endif %};">
+          <div class="message-bubble
+               {% if message.sender == request.user %}sent{% else %}received{% endif %}">
+            {{ message.body }}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:3px;
+                      padding:0 4px;">
+            {{ message.created_at|time:"H:i" }}
+            {% if message.sender == request.user %}
+              {% if message.is_read %}✓✓{% else %}✓{% endif %}
+            {% endif %}
+          </div>
+        </div>
+      {% empty %}
+        <div style="text-align:center;color:var(--text-muted);
+                    font-size:14px;margin-top:40px;">
+          Start the conversation below 👇
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- Input -->
+    <form method="post" class="chat-input-bar">
+      {% csrf_token %}
+      <input type="text" name="body" id="messageInput"
+             placeholder="Type a message..." autocomplete="off" required>
+      <button type="submit">Send</button>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Scroll to bottom on load
+  const chat = document.getElementById('chatMessages');
+  if (chat) chat.scrollTop = chat.scrollHeight;
+
+  // Submit on Enter
+  document.getElementById('messageInput')
+    .addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        this.closest('form').submit();
+      }
+    });
+</script>
+{% endblock %}

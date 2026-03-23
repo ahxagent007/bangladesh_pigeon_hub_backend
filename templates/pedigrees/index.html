@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Pedigrees — PigeonMarket{% endblock %}
+{% block content %}
+<div class="container section">
+
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;
+              align-items:center;margin-bottom:24px;">
+    <div>
+      <h1 class="section-title" style="margin:0;">🌳 Pedigree Records</h1>
+      <p style="color:var(--text-muted);font-size:14px;margin-top:4px;">
+        Browse public pedigree trees or manage your own.
+      </p>
+    </div>
+    {% if user.is_authenticated %}
+      <a href="/dashboard/pigeons/" class="btn-primary">
+        + Add Pedigree
+      </a>
+    {% endif %}
+  </div>
+
+  <!-- My Pedigrees (logged in only) -->
+  {% if user.is_authenticated and my_pedigrees %}
+    <div style="margin-bottom:40px;">
+      <h2 style="font-size:17px;font-weight:600;margin-bottom:16px;">
+        My Pedigrees
+      </h2>
+      <div style="display:grid;
+                  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+                  gap:16px;">
+        {% for record in my_pedigrees %}
+          {% include 'pedigrees/_pedigree_card.html' with record=record mine=True %}
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Public Pedigrees -->
+  <div>
+    <h2 style="font-size:17px;font-weight:600;margin-bottom:16px;">
+      Public Pedigrees
+    </h2>
+
+    {% if public_pedigrees %}
+      <div style="display:grid;
+                  grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+                  gap:16px;">
+        {% for record in public_pedigrees %}
+          {% include 'pedigrees/_pedigree_card.html' with record=record mine=False %}
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="card" style="padding:60px;text-align:center;">
+        <p style="font-size:48px;margin-bottom:16px;">🌳</p>
+        <p style="font-size:16px;color:var(--text-muted);">
+          No public pedigrees yet.
+        </p>
+        {% if user.is_authenticated %}
+          <a href="/dashboard/pigeons/"
+             class="btn-primary" style="margin-top:16px;display:inline-block;">
+            Add Your First Pedigree
+          </a>
+        {% else %}
+          <a href="/auth/register/"
+             class="btn-primary" style="margin-top:16px;display:inline-block;">
+            Join Free
+          </a>
+        {% endif %}
+      </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

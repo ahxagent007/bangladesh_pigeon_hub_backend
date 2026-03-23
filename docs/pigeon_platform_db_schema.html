@@ -1,0 +1,126 @@
+
+<div id="erd" style="padding: 8px 0;"></div>
+<script type="module">
+import mermaid from 'https://esm.sh/mermaid@11/dist/mermaid.esm.min.mjs';
+const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+await document.fonts.ready;
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'base',
+  fontFamily: '"Anthropic Sans", sans-serif',
+  themeVariables: {
+    darkMode: dark,
+    fontSize: '13px',
+    fontFamily: '"Anthropic Sans", sans-serif',
+    lineColor: dark ? '#9c9a92' : '#73726c',
+    textColor: dark ? '#c2c0b6' : '#3d3d3a',
+  },
+});
+const { svg } = await mermaid.render('erd-svg', `erDiagram
+  USER ||--o{ PIGEON : owns
+  USER ||--o{ LISTING : sells
+  USER ||--o{ SAVED_LISTING : saves
+  USER ||--o{ FEED_FORMULA : creates
+  USER }o--o{ CONVERSATION : participates
+  USER ||--o{ MESSAGE : sends
+  BREED ||--o{ PIGEON : categorizes
+  PIGEON ||--o{ PIGEON_IMAGE : has
+  PIGEON ||--o| LISTING : listed_as
+  PIGEON ||--o| PEDIGREE_RECORD : has
+  PEDIGREE_RECORD }o--o| PIGEON : sire
+  PEDIGREE_RECORD }o--o| PIGEON : dam
+  LISTING ||--o{ SAVED_LISTING : saved_by
+  LISTING ||--o{ CONVERSATION : about
+  CONVERSATION ||--o{ MESSAGE : contains
+  FEED_FORMULA ||--o{ FEED_FORMULA_ITEM : composed_of
+  FEED_FORMULA_ITEM }o--|| GRAIN : uses
+
+  USER {
+    bigint id PK
+    string username
+    string email
+    string phone
+    string location
+    string avatar
+    bool is_verified
+  }
+  BREED {
+    bigint id PK
+    string name
+    string origin
+  }
+  PIGEON {
+    bigint id PK
+    bigint owner_id FK
+    bigint breed_id FK
+    string name
+    string ring_number
+    char gender
+    string color
+    date date_of_birth
+    bool is_for_sale
+  }
+  PIGEON_IMAGE {
+    bigint id PK
+    bigint pigeon_id FK
+    string image
+    bool is_primary
+  }
+  LISTING {
+    bigint id PK
+    bigint seller_id FK
+    bigint pigeon_id FK
+    string title
+    decimal price
+    string location
+    string status
+    int views_count
+  }
+  PEDIGREE_RECORD {
+    bigint id PK
+    bigint pigeon_id FK
+    bigint sire_id FK
+    bigint dam_id FK
+    bool is_public
+  }
+  GRAIN {
+    bigint id PK
+    string name
+    float protein_percent
+    float fat_percent
+    float carb_percent
+  }
+  FEED_FORMULA {
+    bigint id PK
+    bigint user_id FK
+    string name
+    string purpose
+    float target_protein
+  }
+  FEED_FORMULA_ITEM {
+    bigint id PK
+    bigint formula_id FK
+    bigint grain_id FK
+    float percentage
+  }
+  CONVERSATION {
+    bigint id PK
+    bigint listing_id FK
+    datetime updated_at
+  }
+  MESSAGE {
+    bigint id PK
+    bigint conversation_id FK
+    bigint sender_id FK
+    text body
+    bool is_read
+    datetime created_at
+  }
+  SAVED_LISTING {
+    bigint id PK
+    bigint user_id FK
+    bigint listing_id FK
+  }
+`);
+document.getElementById('erd').innerHTML = svg;
+</script>

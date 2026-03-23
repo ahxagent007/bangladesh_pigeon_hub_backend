@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}Add Listing — BPH{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:40px;padding-bottom:60px;">
+  <div style="max-width:560px;margin:0 auto;">
+    <h1 style="font-size:22px;margin-bottom:24px;">Create a Listing</h1>
+
+    <div class="card" style="padding:32px;">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Pigeon -->
+        <div class="form-group">
+          <label>Select Pigeon <span style="color:#ef4444;">*</span></label>
+          <select name="pigeon" required>
+            <option value="">— Choose a pigeon —</option>
+            {% for pigeon in form.pigeon.field.queryset %}
+              <option value="{{ pigeon.pk }}"
+                {% if form.pigeon.value|stringformat:'s' == pigeon.pk|stringformat:'s' %}
+                  selected{% endif %}>
+                {{ pigeon.name }}
+                {% if pigeon.ring_number %}({{ pigeon.ring_number }}){% endif %}
+              </option>
+            {% endfor %}
+          </select>
+          {% if form.pigeon.errors %}
+            <div class="form-error">{{ form.pigeon.errors.0 }}</div>
+          {% endif %}
+          <div class="form-help">
+            Don't see your pigeon?
+            <a href="/pigeons/add/" style="color:var(--primary);">Add one first →</a>
+          </div>
+        </div>
+
+        <!-- Title -->
+        <div class="form-group">
+          <label>Listing Title <span style="color:#ef4444;">*</span></label>
+          <input type="text" name="title"
+                 value="{{ form.title.value|default:'' }}"
+                 placeholder="e.g. Champion Racing Homer for Sale" required>
+          {% if form.title.errors %}
+            <div class="form-error">{{ form.title.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label>Description <span style="color:#ef4444;">*</span></label>
+          <textarea name="description" rows="4" required
+                    placeholder="Describe the pigeon, its history, health...">{{ form.description.value|default:'' }}</textarea>
+          {% if form.description.errors %}
+            <div class="form-error">{{ form.description.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Price + Location row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Price ($) <span style="color:#ef4444;">*</span></label>
+            <input type="number" name="price" step="0.01" min="0"
+                   value="{{ form.price.value|default:'' }}"
+                   placeholder="0.00" required>
+            {% if form.price.errors %}
+              <div class="form-error">{{ form.price.errors.0 }}</div>
+            {% endif %}
+          </div>
+          <div class="form-group">
+            <label>Location <span style="color:#ef4444;">*</span></label>
+            <input type="text" name="location"
+                   value="{{ form.location.value|default:'' }}"
+                   placeholder="e.g. London, UK" required>
+            {% if form.location.errors %}
+              <div class="form-error">{{ form.location.errors.0 }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Negotiable -->
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" name="is_negotiable"
+                   {% if form.is_negotiable.value %}checked{% endif %}
+                   style="width:16px;height:16px;">
+            <span>Price is negotiable</span>
+          </label>
+        </div>
+
+        <!-- Submit -->
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <button type="submit" class="btn-primary"
+                  style="flex:1;padding:12px;font-size:15px;">
+            Publish Listing
+          </button>
+          <a href="/marketplace/" class="btn-outline"
+             style="padding:12px 20px;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

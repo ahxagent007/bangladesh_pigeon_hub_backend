@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Login — BPH{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card card">
+    <h2 style="margin-bottom:24px;font-size:22px;">Sign in</h2>
+    <form method="post" novalidate>
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Username</label>
+        <input type="text" name="username" autofocus required>
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" name="password" required>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;padding:12px;">
+        Sign In
+      </button>
+    </form>
+    <p style="text-align:center;margin-top:16px;font-size:14px;">
+      No account? <a href="/auth/register/" style="color:var(--primary);">Join free</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

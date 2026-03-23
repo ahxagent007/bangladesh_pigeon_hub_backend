@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% block title %}BPH — Buy & Sell Pigeons{% endblock %}
+{% block content %}
+
+<!-- Hero -->
+<div class="hero">
+  <div class="container">
+    <h1>🐦 Find Your Perfect Pigeon</h1>
+    <p>The largest pigeon marketplace. Buy, sell, and manage your flock.</p>
+    <form action="/marketplace/" method="get" class="hero-search">
+      <input type="text" name="q" placeholder="Search by breed, location...">
+      <button type="submit">Search</button>
+    </form>
+    <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a href="/marketplace/" style="color:#fff;opacity:.85;font-size:14px;
+         border:1px solid rgba(255,255,255,.4);padding:6px 16px;border-radius:999px;">
+        Browse All
+      </a>
+      {% for breed in breeds|slice:":5" %}
+        <a href="/marketplace/?breed={{ breed.id }}"
+           style="color:#fff;opacity:.85;font-size:14px;
+                  border:1px solid rgba(255,255,255,.4);
+                  padding:6px 16px;border-radius:999px;">
+          {{ breed.name }}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Stats Bar -->
+<div style="background:#1e40af;color:#fff;padding:16px 0;">
+  <div class="container" style="display:flex;justify-content:center;
+       gap:48px;flex-wrap:wrap;text-align:center;">
+    <div>
+      <div style="font-size:22px;font-weight:700;">{{ featured|length }}+</div>
+      <div style="font-size:13px;opacity:.8;">Active Listings</div>
+    </div>
+    <div>
+      <div style="font-size:22px;font-weight:700;">{{ breeds|length }}</div>
+      <div style="font-size:13px;opacity:.8;">Breeds</div>
+    </div>
+    <div>
+      <div style="font-size:22px;font-weight:700;">100%</div>
+      <div style="font-size:13px;opacity:.8;">Free to Join</div>
+    </div>
+  </div>
+</div>
+
+<!-- Featured Listings -->
+<div class="container section">
+  <div style="display:flex;justify-content:space-between;align-items:center;
+              margin-bottom:20px;">
+    <h2 class="section-title" style="margin:0;">Featured Pigeons</h2>
+    <a href="/marketplace/" style="color:var(--primary);font-size:14px;
+       text-decoration:none;">View all →</a>
+  </div>
+
+  {% if featured %}
+    <div class="pigeon-grid">
+      {% for pigeon in featured %}
+        {% if pigeon.listing %}
+        <a href="/marketplace/{{ pigeon.listing.id }}/"
+           style="text-decoration:none;color:inherit;">
+          <div class="card" style="overflow:hidden;transition:transform .15s,
+               box-shadow .15s;cursor:pointer;"
+               onmouseover="this.style.transform='translateY(-3px)';
+                            this.style.boxShadow='0 8px 24px rgba(0,0,0,.12)'"
+               onmouseout="this.style.transform='';this.style.boxShadow=''">
+
+            <!-- Image -->
+            {% with img=pigeon.primary_image %}
+              {% if img %}
+                <img src="{{ img.image.url }}" class="card-img"
+                     alt="{{ pigeon.name }}"
+                     style="height:190px;object-fit:cover;">
+              {% else %}
+                <div class="card-img" style="height:190px;background:#e5e7eb;
+                     display:flex;align-items:center;justify-content:center;
+                     font-size:52px;">🐦</div>
+              {% endif %}
+            {% endwith %}
+
+            <!-- Body -->
+            <div class="card-body">
+              <div class="card-title">{{ pigeon.name }}</div>
+              <div class="card-meta">
+                {% if pigeon.breed %}{{ pigeon.breed.name }}{% else %}Unknown Breed{% endif %}
+                · {{ pigeon.get_gender_display }}
+              </div>
+              <div class="card-price">${{ pigeon.listing.price }}</div>
+              <div style="display:flex;justify-content:space-between;
+                          align-items:center;font-size:12px;color:var(--text-muted);">
+                <span>📍 {{ pigeon.listing.location }}</span>
+                <span>👁 {{ pigeon.listing.views_count }}</span>
+              </div>
+            </div>
+          </div>
+        </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div style="text-align:center;padding:60px;color:var(--text-muted);">
+      <p style="font-size:48px;margin-bottom:12px;">🐦</p>
+      <p style="font-size:16px;">No listings yet. Be the first to list!</p>
+      {% if user.is_authenticated %}
+        <a href="/marketplace/add/" class="btn-primary"
+           style="margin-top:16px;display:inline-block;">Add First Listing</a>
+      {% else %}
+        <a href="/auth/register/" class="btn-primary"
+           style="margin-top:16px;display:inline-block;">Join Free</a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+
+<!-- Browse by Breed -->
+{% if breeds %}
+<div style="background:var(--surface);border-top:1px solid var(--border);
+            border-bottom:1px solid var(--border);padding:40px 0;">
+  <div class="container">
+    <h2 class="section-title">Browse by Breed</h2>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
+                gap:12px;">
+      {% for breed in breeds %}
+        <a href="/marketplace/?breed={{ breed.id }}"
+           style="text-decoration:none;">
+          <div style="background:var(--bg);border:1px solid var(--border);
+               border-radius:var(--radius);padding:16px;text-align:center;
+               transition:border-color .15s,background .15s;"
+               onmouseover="this.style.borderColor='var(--primary)';
+                            this.style.background='#eff6ff'"
+               onmouseout="this.style.borderColor='var(--border)';
+                           this.style.background='var(--bg)'">
+            <div style="font-size:28px;margin-bottom:6px;">🐦</div>
+            <div style="font-size:14px;font-weight:600;color:var(--text);">
+              {{ breed.name }}
+            </div>
+            {% if breed.origin %}
+              <div style="font-size:12px;color:var(--text-muted);">
+                {{ breed.origin }}
+              </div>
+            {% endif %}
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- How It Works -->
+<div class="container section">
+  <h2 class="section-title" style="text-align:center;">How It Works</h2>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px;
+              max-width:700px;margin:0 auto;text-align:center;">
+    <div>
+      <div style="font-size:40px;margin-bottom:12px;">📝</div>
+      <div style="font-weight:600;margin-bottom:6px;">Create Account</div>
+      <div style="font-size:14px;color:var(--text-muted);">
+        Sign up free in seconds. No credit card needed.
+      </div>
+    </div>
+    <div>
+      <div style="font-size:40px;margin-bottom:12px;">📋</div>
+      <div style="font-weight:600;margin-bottom:6px;">List Your Pigeon</div>
+      <div style="font-size:14px;color:var(--text-muted);">
+        Add photos, details, and set your price.
+      </div>
+    </div>
+    <div>
+      <div style="font-size:40px;margin-bottom:12px;">💬</div>
+      <div style="font-weight:600;margin-bottom:6px;">Connect & Sell</div>
+      <div style="font-size:14px;color:var(--text-muted);">
+        Message buyers directly through the platform.
+      </div>
+    </div>
+  </div>
+  {% if not user.is_authenticated %}
+    <div style="text-align:center;margin-top:32px;">
+      <a href="/auth/register/" class="btn-primary"
+         style="padding:12px 32px;font-size:16px;">
+        Get Started Free
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}

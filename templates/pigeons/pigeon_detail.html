@@ -1,0 +1,193 @@
+{% extends 'base.html' %}
+{% block title %}{{ pigeon.name }} — BPH{% endblock %}
+{% block content %}
+<div class="container section">
+
+  <!-- Breadcrumb -->
+  <div style="font-size:13px;color:var(--text-muted);margin-bottom:20px;">
+    <a href="/" style="color:var(--text-muted);text-decoration:none;">Home</a> /
+    <a href="/dashboard/pigeons/"
+       style="color:var(--text-muted);text-decoration:none;">My Pigeons</a> /
+    {{ pigeon.name }}
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 320px;
+              gap:32px;align-items:start;">
+
+    <!-- Left -->
+    <div>
+      <!-- Images -->
+      <div style="margin-bottom:24px;">
+        {% with images=pigeon.images.all %}
+          {% if images %}
+            <img id="mainImg" src="{{ images.0.image.url }}"
+                 style="width:100%;height:380px;object-fit:cover;
+                        border-radius:var(--radius);
+                        border:1px solid var(--border);"
+                 alt="{{ pigeon.name }}">
+            {% if images|length > 1 %}
+              <div style="display:flex;gap:8px;margin-top:8px;overflow-x:auto;">
+                {% for img in images %}
+                  <img src="{{ img.image.url }}"
+                       onclick="document.getElementById('mainImg').src=this.src"
+                       style="width:70px;height:70px;object-fit:cover;
+                              border-radius:var(--radius);cursor:pointer;
+                              border:2px solid transparent;flex-shrink:0;"
+                       onmouseover="this.style.borderColor='var(--primary)'"
+                       onmouseout="this.style.borderColor='transparent'">
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% else %}
+            <div style="width:100%;height:300px;background:#e5e7eb;
+                 border-radius:var(--radius);display:flex;
+                 align-items:center;justify-content:center;font-size:80px;">
+              🐦
+            </div>
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      <!-- Details -->
+      <div class="card" style="padding:24px;">
+        <h2 style="font-size:18px;margin-bottom:20px;">Details</h2>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          {% with fields=pigeon %}
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);
+                        text-transform:uppercase;letter-spacing:.5px;">Name</div>
+            <div style="font-weight:600;margin-top:2px;">{{ pigeon.name }}</div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);
+                        text-transform:uppercase;letter-spacing:.5px;">Ring Number</div>
+            <div style="font-weight:600;margin-top:2px;">
+              {{ pigeon.ring_number|default:'—' }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);
+                        text-transform:uppercase;letter-spacing:.5px;">Breed</div>
+            <div style="font-weight:600;margin-top:2px;">
+              {{ pigeon.breed|default:'Unknown' }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);
+                        text-transform:uppercase;letter-spacing:.5px;">Gender</div>
+            <div style="font-weight:600;margin-top:2px;">
+              {{ pigeon.get_gender_display }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);
+                        text-transform:uppercase;letter-spacing:.5px;">Color</div>
+            <div style="font-weight:600;margin-top:2px;">
+              {{ pigeon.get_color_display }}
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);
+                        text-transform:uppercase;letter-spacing:.5px;">Age</div>
+            <div style="font-weight:600;margin-top:2px;">
+              {{ pigeon.age_display }}
+            </div>
+          </div>
+          {% if pigeon.weight %}
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);
+                        text-transform:uppercase;letter-spacing:.5px;">Weight</div>
+            <div style="font-weight:600;margin-top:2px;">{{ pigeon.weight }}g</div>
+          </div>
+          {% endif %}
+          <div>
+            <div style="font-size:11px;color:var(--text-muted);
+                        text-transform:uppercase;letter-spacing:.5px;">Owner</div>
+            <div style="font-weight:600;margin-top:2px;">
+              {{ pigeon.owner.username }}
+            </div>
+          </div>
+          {% endwith %}
+        </div>
+
+        {% if pigeon.description %}
+          <div style="margin-top:20px;padding-top:20px;
+                      border-top:1px solid var(--border);">
+            <div style="font-size:11px;color:var(--text-muted);
+                        text-transform:uppercase;letter-spacing:.5px;
+                        margin-bottom:8px;">Description</div>
+            <p style="color:var(--text);font-size:14px;line-height:1.7;">
+              {{ pigeon.description }}
+            </p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <div>
+      <div class="card" style="padding:20px;margin-bottom:16px;">
+        <h3 style="font-size:15px;margin-bottom:16px;">Quick Actions</h3>
+
+        {% if user == pigeon.owner %}
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <a href="/pigeons/{{ pigeon.id }}/edit/"
+               class="btn-primary" style="text-align:center;padding:10px;">
+              ✏️ Edit Pigeon
+            </a>
+            <a href="/pedigree/{{ pigeon.id }}/"
+               class="btn-outline" style="text-align:center;padding:10px;">
+              🌳 View Pedigree
+            </a>
+            {% if not pigeon.is_for_sale %}
+              <a href="/marketplace/add/"
+                 class="btn-outline" style="text-align:center;padding:10px;">
+                📋 Create Listing
+              </a>
+            {% else %}
+              <a href="/marketplace/{{ pigeon.listing.id }}/"
+                 class="btn-outline" style="text-align:center;padding:10px;">
+                👁 View Listing
+              </a>
+            {% endif %}
+            <form method="post"
+                  action="/pigeons/{{ pigeon.id }}/delete/"
+                  onsubmit="return confirm('Delete {{ pigeon.name }}?')">
+              {% csrf_token %}
+              <button type="submit" class="btn-danger"
+                      style="width:100%;padding:10px;">
+                🗑 Delete Pigeon
+              </button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Pedigree Card -->
+      <div class="card" style="padding:20px;">
+        <h3 style="font-size:15px;margin-bottom:12px;">🌳 Pedigree</h3>
+        {% if pigeon.pedigree %}
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+            Pedigree record available.
+          </p>
+          <a href="/pedigree/{{ pigeon.id }}/"
+             class="btn-outline btn-sm" style="display:block;text-align:center;">
+            View Full Tree
+          </a>
+        {% else %}
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px;">
+            No pedigree record.
+          </p>
+          {% if user == pigeon.owner %}
+            <a href="/pedigree/{{ pigeon.id }}/edit/"
+               class="btn-outline btn-sm" style="display:block;text-align:center;">
+              + Add Pedigree
+            </a>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

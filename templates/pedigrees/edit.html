@@ -1,0 +1,104 @@
+{% extends 'base.html' %}
+{% block title %}Edit Pedigree — {{ pigeon.name }}{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:40px;padding-bottom:60px;">
+  <div style="max-width:520px;margin:0 auto;">
+    <h1 style="font-size:22px;margin-bottom:8px;">
+      Edit Pedigree: {{ pigeon.name }}
+    </h1>
+    <p style="color:var(--text-muted);margin-bottom:24px;">
+      Link parent pigeons to build a family tree.
+    </p>
+
+    <div class="card" style="padding:32px;">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <!-- Subject -->
+        <div style="background:#eff6ff;border-radius:var(--radius);
+             padding:14px;margin-bottom:24px;display:flex;
+             align-items:center;gap:12px;">
+          <div style="font-size:28px;">🐦</div>
+          <div>
+            <div style="font-weight:700;">{{ pigeon.name }}</div>
+            <div style="font-size:13px;color:var(--text-muted);">
+              {{ pigeon.breed|default:'Unknown Breed' }} ·
+              Ring: {{ pigeon.ring_number|default:'—' }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Sire -->
+        <div class="form-group">
+          <label>♂ Sire (Father)
+            <span style="color:var(--text-muted);font-weight:400;">
+              (optional)
+            </span>
+          </label>
+          <select name="sire">
+            <option value="">— Unknown —</option>
+            {% for p in form.sire.field.queryset %}
+              <option value="{{ p.pk }}"
+                {% if form.sire.value|stringformat:'s' == p.pk|stringformat:'s' %}
+                  selected{% endif %}>
+                {{ p.name }}
+                {% if p.ring_number %}({{ p.ring_number }}){% endif %}
+                — {{ p.breed|default:'Unknown' }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Dam -->
+        <div class="form-group">
+          <label>♀ Dam (Mother)
+            <span style="color:var(--text-muted);font-weight:400;">
+              (optional)
+            </span>
+          </label>
+          <select name="dam">
+            <option value="">— Unknown —</option>
+            {% for p in form.dam.field.queryset %}
+              <option value="{{ p.pk }}"
+                {% if form.dam.value|stringformat:'s' == p.pk|stringformat:'s' %}
+                  selected{% endif %}>
+                {{ p.name }}
+                {% if p.ring_number %}({{ p.ring_number }}){% endif %}
+                — {{ p.breed|default:'Unknown' }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label>Notes
+            <span style="color:var(--text-muted);font-weight:400;">
+              (optional)
+            </span>
+          </label>
+          <textarea name="notes" rows="3"
+                    placeholder="Breeding notes, race history...">{{ form.notes.value|default:'' }}</textarea>
+        </div>
+
+        <!-- Public toggle -->
+        <div class="form-group">
+          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+            <input type="checkbox" name="is_public"
+                   {% if form.is_public.value %}checked{% endif %}
+                   style="width:16px;height:16px;">
+            <span>Make pedigree publicly visible</span>
+          </label>
+        </div>
+
+        <div style="display:flex;gap:12px;">
+          <button type="submit" class="btn-primary"
+                  style="flex:1;padding:12px;">Save Pedigree</button>
+          <a href="/pedigree/{{ pigeon.id }}/"
+             class="btn-outline" style="padding:12px 20px;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

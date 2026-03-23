@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Delete {{ pigeon.name }}{% endblock %}
+{% block content %}
+<div class="container" style="padding:60px 0;max-width:480px;margin:0 auto;">
+  <div class="card" style="padding:32px;text-align:center;">
+    <div style="font-size:48px;margin-bottom:16px;">⚠️</div>
+    <h2 style="margin-bottom:8px;">Delete {{ pigeon.name }}?</h2>
+    <p style="color:var(--text-muted);margin-bottom:24px;">
+      This will permanently delete <strong>{{ pigeon.name }}</strong>
+      and all associated images and pedigree records.
+      This action cannot be undone.
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-danger" style="padding:10px 28px;">
+          Yes, Delete
+        </button>
+      </form>
+      <a href="/pigeons/{{ pigeon.id }}/"
+         class="btn-outline" style="padding:10px 28px;">Cancel</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

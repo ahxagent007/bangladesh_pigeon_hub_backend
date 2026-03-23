@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}{% if editing %}Edit{% else %}Add{% endif %} Pigeon — BPH{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:40px;padding-bottom:60px;">
+
+  <div style="max-width:600px;margin:0 auto;">
+    <h1 style="font-size:22px;margin-bottom:24px;">
+      {% if editing %}Edit {{ pigeon.name }}{% else %}Add New Pigeon{% endif %}
+    </h1>
+
+    <div class="card" style="padding:32px;">
+      <form method="post" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <!-- Image Upload -->
+        <div class="form-group">
+          <label>Photo</label>
+          <div style="border:2px dashed var(--border);border-radius:var(--radius);
+               padding:24px;text-align:center;cursor:pointer;position:relative;"
+               onclick="document.getElementById('imageInput').click()">
+            <img id="imagePreview"
+                 {% if editing and pigeon.primary_image %}
+                   src="{{ pigeon.primary_image.image.url }}"
+                   style="max-height:200px;border-radius:var(--radius);
+                          margin-bottom:8px;display:block;margin:0 auto 8px;"
+                 {% else %}
+                   style="display:none;max-height:200px;border-radius:var(--radius);
+                          margin:0 auto 8px;"
+                 {% endif %}
+                 alt="Preview">
+            <div id="uploadPrompt"
+                 {% if editing and pigeon.primary_image %}style="display:none;"
+                 {% endif %}>
+              <div style="font-size:32px;margin-bottom:8px;">📷</div>
+              <div style="font-size:14px;color:var(--text-muted);">
+                Click to upload photo
+              </div>
+            </div>
+            <input type="file" id="imageInput" name="image"
+                   accept="image/*" style="display:none;"
+                   onchange="previewImg(this)">
+          </div>
+        </div>
+
+        <!-- Name -->
+        <div class="form-group">
+          <label>Name <span style="color:#ef4444;">*</span></label>
+          <input type="text" name="name"
+                 value="{{ form.name.value|default:'' }}"
+                 placeholder="e.g. Blue Arrow" required>
+          {% if form.name.errors %}
+            <div class="form-error">{{ form.name.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Ring Number -->
+        <div class="form-group">
+          <label>Ring Number
+            <span style="color:var(--text-muted);font-weight:400;">(optional)</span>
+          </label>
+          <input type="text" name="ring_number"
+                 value="{{ form.ring_number.value|default:'' }}"
+                 placeholder="e.g. GB23-12345">
+          {% if form.ring_number.errors %}
+            <div class="form-error">{{ form.ring_number.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Breed + Gender row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Breed</label>
+            <select name="breed">
+              <option value="">Unknown / Other</option>
+              {% for breed in form.breed.field.queryset %}
+                <option value="{{ breed.pk }}"
+                  {% if form.breed.value|stringformat:'s' == breed.pk|stringformat:'s' %}
+                    selected{% endif %}>
+                  {{ breed.name }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Gender</label>
+            <select name="gender">
+              {% for val, label in form.gender.field.choices %}
+                <option value="{{ val }}"
+                  {% if form.gender.value == val %}selected{% endif %}>
+                  {{ label }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <!-- Color + DOB row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+          <div class="form-group">
+            <label>Color</label>
+            <select name="color">
+              {% for val, label in form.color.field.choices %}
+                <option value="{{ val }}"
+                  {% if form.color.value == val %}selected{% endif %}>
+                  {{ label }}
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Date of Birth</label>
+            <input type="date" name="date_of_birth"
+                   value="{{ form.date_of_birth.value|default:'' }}">
+          </div>
+        </div>
+
+        <!-- Weight -->
+        <div class="form-group">
+          <label>Weight (grams)
+            <span style="color:var(--text-muted);font-weight:400;">(optional)</span>
+          </label>
+          <input type="number" name="weight" step="0.1" min="0"
+                 value="{{ form.weight.value|default:'' }}"
+                 placeholder="e.g. 350">
+        </div>
+
+        <!-- Description -->
+        <div class="form-group">
+          <label>Description
+            <span style="color:var(--text-muted);font-weight:400;">(optional)</span>
+          </label>
+          <textarea name="description" rows="3"
+                    placeholder="Any notable characteristics, race history, etc.">{{ form.description.value|default:'' }}</textarea>
+        </div>
+
+        <!-- Submit -->
+        <div style="display:flex;gap:12px;margin-top:8px;">
+          <button type="submit" class="btn-primary"
+                  style="flex:1;padding:12px;font-size:15px;">
+            {% if editing %}Save Changes{% else %}Add Pigeon{% endif %}
+          </button>
+          <a href="/dashboard/pigeons/"
+             class="btn-outline" style="padding:12px 20px;">Cancel</a>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewImg(input) {
+  const preview = document.getElementById('imagePreview');
+  const prompt  = document.getElementById('uploadPrompt');
+  const file    = input.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      prompt.style.display  = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+}
+</script>
+{% endblock %}

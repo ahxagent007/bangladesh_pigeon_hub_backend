@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}Marketplace — BPH{% endblock %}
+{% block content %}
+<div class="container section">
+
+  <!-- Breadcrumb + Header -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+    <h1 class="section-title" style="margin:0;">Browse Pigeons</h1>
+    {% if user.is_authenticated %}
+      <a href="/marketplace/add/" class="btn-primary">+ Add Listing</a>
+    {% endif %}
+  </div>
+
+  <!-- Breed Chips -->
+  <div class="chip-row">
+    <a href="/marketplace/" class="chip {% if not current_filters.breed %}active{% endif %}">
+      All Breeds
+    </a>
+    {% for breed in breeds %}
+      <a href="?breed={{ breed.id }}" class="chip
+         {% if current_filters.breed == breed.id|stringformat:'s' %}active{% endif %}">
+        {{ breed.name }}
+      </a>
+    {% endfor %}
+  </div>
+
+  <div class="marketplace-layout">
+
+    <!-- Filters Sidebar -->
+    <aside class="filter-sidebar card" style="padding:16px;">
+      <h4 style="margin-bottom:16px;font-size:15px;font-weight:600;">Filters</h4>
+      <form method="get">
+        {% if current_filters.breed %}
+          <input type="hidden" name="breed" value="{{ current_filters.breed }}">
+        {% endif %}
+        <div class="filter-group">
+          <h4>Search</h4>
+          <input type="text" name="q" placeholder="Keyword..." value="{{ current_filters.q }}">
+        </div>
+        <div class="filter-group">
+          <h4>Price Range</h4>
+          <div style="display:flex;gap:8px;">
+            <input type="number" name="min_price" placeholder="Min"
+                   value="{{ current_filters.min_price }}" style="width:50%;">
+            <input type="number" name="max_price" placeholder="Max"
+                   value="{{ current_filters.max_price }}" style="width:50%;">
+          </div>
+        </div>
+        <div class="filter-group">
+          <h4>Location</h4>
+          <input type="text" name="location" placeholder="City..."
+                 value="{{ current_filters.location }}">
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%;">Apply</button>
+        <a href="/marketplace/" style="display:block;text-align:center;margin-top:8px;
+           font-size:13px;color:var(--text-muted);">Clear filters</a>
+      </form>
+    </aside>
+
+    <!-- Listing Grid -->
+    <div>
+      {% if listings %}
+        <div class="pigeon-grid">
+          {% for listing in listings %}
+            <a href="/marketplace/{{ listing.id }}/" style="text-decoration:none;color:inherit;">
+              <div class="card" style="overflow:hidden;transition:transform .15s,box-shadow .15s;"
+                   onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 8px 24px rgba(0,0,0,.1)'"
+                   onmouseout="this.style.transform='';this.style.boxShadow=''">
+                {% with img=listing.pigeon.primary_image %}
+                  {% if img %}
+                    <img src="{{ img.image.url }}" class="card-img" alt="{{ listing.title }}">
+                  {% else %}
+                    <div class="card-img" style="background:#e5e7eb;display:flex;
+                         align-items:center;justify-content:center;font-size:48px;">🐦</div>
+                  {% endif %}
+                {% endwith %}
+                <div class="card-body">
+                  <div class="card-title">{{ listing.title }}</div>
+                  <div class="card-meta">
+                    {% if listing.pigeon.breed %}{{ listing.pigeon.breed.name }} · {% endif %}
+                    {{ listing.location }}
+                  </div>
+                  <div class="card-price">${{ listing.price }}</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-size:12px;color:var(--text-muted);">
+                      By {{ listing.seller.username }}
+                    </span>
+                    {% if listing.is_negotiable %}
+                      <span class="chip" style="font-size:11px;padding:2px 8px;">Negotiable</span>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div style="text-align:center;padding:80px 0;color:var(--text-muted);">
+          <p style="font-size:48px;margin-bottom:16px;">🐦</p>
+          <p style="font-size:18px;">No listings found.</p>
+          <a href="/marketplace/" style="color:var(--primary);">Clear filters</a>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+</div>
+{% endblock %}

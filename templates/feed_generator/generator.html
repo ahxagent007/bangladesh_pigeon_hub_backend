@@ -1,0 +1,310 @@
+{% extends 'base.html' %}
+{% block title %}Feed Generator — PigeonMarket{% endblock %}
+{% block content %}
+<div class="container section">
+
+  <h1 class="section-title">🌾 Feed Generator</h1>
+  <p style="color:var(--text-muted);margin-bottom:32px;max-width:520px;">
+    Get a custom grain mix formula based on your pigeon's purpose
+    and nutritional needs.
+  </p>
+
+  <div style="display:grid;grid-template-columns:300px 1fr;
+              gap:32px;align-items:start;">
+
+    <!-- ── Form ── -->
+    <div class="card" style="padding:24px;">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="form-group">
+          <label style="display:block;margin-bottom:10px;font-weight:600;">
+            Purpose
+          </label>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            {% for value, label in purpose_choices %}
+              <label style="display:flex;align-items:center;gap:10px;
+                            cursor:pointer;padding:10px 12px;
+                            border-radius:var(--radius);
+                            border:1px solid var(--border);
+                            transition:border-color .15s,background .15s;
+                            {% if selected_purpose == value %}
+                              background:#eff6ff;border-color:#2563eb;
+                            {% endif %}">
+                <input type="radio" name="purpose" value="{{ value }}"
+                       {% if selected_purpose == value %}checked{% endif %}
+                       style="accent-color:var(--primary);">
+                <span style="font-size:14px;">{{ label }}</span>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:16px;">
+          <label>
+            Target Protein %
+            <span style="color:var(--text-muted);font-weight:400;">
+              (optional)
+            </span>
+          </label>
+          <input type="number" name="target_protein"
+                 placeholder="e.g. 15" min="8" max="25" step="0.5"
+                 value="{{ target_protein }}">
+          <div class="form-help">Leave blank for recommended level.</div>
+        </div>
+
+        <button type="submit" class="btn-primary"
+                style="width:100%;padding:12px;margin-top:8px;">
+          Generate Formula
+        </button>
+      </form>
+    </div>
+
+    <!-- ── Results ── -->
+    {% if result %}
+    <div>
+
+      <!-- Nutrition Summary -->
+      <div class="card" style="padding:24px;margin-bottom:20px;">
+        <h3 style="font-size:16px;margin-bottom:16px;">
+          Nutritional Values
+          <span style="color:var(--text-muted);font-weight:400;
+                       font-size:13px;">per 100g</span>
+        </h3>
+
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;">
+          <div style="background:#eff6ff;border-radius:var(--radius);
+                      padding:14px;text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:#2563eb;">
+              {{ result.total_protein }}%
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+              Protein
+            </div>
+          </div>
+          <div style="background:#fff7ed;border-radius:var(--radius);
+                      padding:14px;text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:#d97706;">
+              {{ result.total_fat }}%
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+              Fat
+            </div>
+          </div>
+          <div style="background:#f0fdf4;border-radius:var(--radius);
+                      padding:14px;text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:#16a34a;">
+              {{ result.total_carbs }}%
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+              Carbs
+            </div>
+          </div>
+          <div style="background:#f0f9ff;border-radius:var(--radius);
+                      padding:14px;text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:#0891b2;">
+              {{ result.total_fiber }}%
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+              Fiber
+            </div>
+          </div>
+          <div style="background:#fdf4ff;border-radius:var(--radius);
+                      padding:14px;text-align:center;">
+            <div style="font-size:20px;font-weight:700;color:#9333ea;">
+              {{ result.total_cal|floatformat:0 }}
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">
+              kcal
+            </div>
+          </div>
+        </div>
+
+        <!-- Target vs Actual -->
+        {% if result.targets %}
+        <div style="margin-top:14px;padding:12px 16px;background:var(--bg);
+                    border-radius:var(--radius);font-size:13px;
+                    display:flex;gap:24px;flex-wrap:wrap;align-items:center;">
+          <span>🎯 Target protein: <strong>{{ result.targets.protein }}%</strong></span>
+          <span>
+            ✅ Actual:
+            <strong style="color:
+              {% if result.total_protein >= result.targets.protein %}
+                #16a34a{% else %}#d97706{% endif %};">
+              {{ result.total_protein }}%
+            </strong>
+          </span>
+          <span>⚡ Energy: <strong>{{ result.targets.energy|capfirst }}</strong></span>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Grain Mix Table -->
+      <div class="card" style="padding:24px;margin-bottom:20px;">
+        <div style="display:flex;justify-content:space-between;
+                    align-items:center;margin-bottom:16px;">
+          <h3 style="font-size:16px;margin:0;">Grain Mix</h3>
+          <div style="display:flex;gap:8px;font-size:12px;">
+            <span style="background:#dbeafe;color:#1e40af;padding:2px 8px;
+                         border-radius:999px;">Cereal</span>
+            <span style="background:#d1fae5;color:#065f46;padding:2px 8px;
+                         border-radius:999px;">Legume</span>
+            <span style="background:#fef9c3;color:#854d0e;padding:2px 8px;
+                         border-radius:999px;">Seed</span>
+          </div>
+        </div>
+
+        <table style="width:100%;border-collapse:collapse;font-size:14px;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border);text-align:left;">
+              <th style="padding:8px 0;">Grain</th>
+              <th style="padding:8px 0;text-align:center;">Mix %</th>
+              <th style="padding:8px 0;text-align:center;">Per kg</th>
+              <th style="padding:8px 0;text-align:center;">Protein</th>
+              <th style="padding:8px 0;text-align:center;">Fat</th>
+              <th style="padding:8px 0;min-width:100px;">Distribution</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in result.items %}
+            <tr style="border-bottom:1px solid var(--border);">
+
+              <!-- Name + category badge -->
+              <td style="padding:10px 0;">
+                <div style="font-weight:500;">{{ item.grain }}</div>
+                <span style="font-size:11px;padding:1px 7px;border-radius:999px;
+                  {% if item.category == 'cereal' %}
+                    background:#dbeafe;color:#1e40af;
+                  {% elif item.category == 'legume' %}
+                    background:#d1fae5;color:#065f46;
+                  {% else %}
+                    background:#fef9c3;color:#854d0e;
+                  {% endif %}">
+                  {{ item.category|capfirst }}
+                </span>
+              </td>
+
+              <!-- Mix % -->
+              <td style="padding:10px 0;text-align:center;font-weight:700;">
+                {{ item.percentage }}%
+              </td>
+
+              <!-- Per kg -->
+              <td style="padding:10px 0;text-align:center;
+                         color:var(--text-muted);">
+                {{ item.grams_per_kg }}g
+              </td>
+
+              <!-- Protein -->
+              <td style="padding:10px 0;text-align:center;">
+                <span style="color:#2563eb;font-weight:600;">
+                  {{ item.protein }}%
+                </span>
+              </td>
+
+              <!-- Fat -->
+              <td style="padding:10px 0;text-align:center;
+                         color:var(--text-muted);">
+                {{ item.fat }}%
+              </td>
+
+              <!-- Distribution bar -->
+              <td style="padding:10px 0;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div style="flex:1;height:8px;background:#e5e7eb;
+                              border-radius:4px;overflow:hidden;">
+                    <div style="height:100%;width:{{ item.percentage }}%;
+                      border-radius:4px;
+                      {% if item.category == 'cereal' %}
+                        background:#3b82f6;
+                      {% elif item.category == 'legume' %}
+                        background:#22c55e;
+                      {% else %}
+                        background:#eab308;
+                      {% endif %}">
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+            </tr>
+            {% endfor %}
+          </tbody>
+
+          <!-- Totals row -->
+          <tfoot>
+            <tr style="border-top:2px solid var(--border);
+                       background:var(--bg);font-weight:700;">
+              <td style="padding:10px 0;">Total</td>
+              <td style="padding:10px 0;text-align:center;">100%</td>
+              <td style="padding:10px 0;text-align:center;">1000g</td>
+              <td style="padding:10px 0;text-align:center;color:#2563eb;">
+                {{ result.total_protein }}%
+              </td>
+              <td style="padding:10px 0;text-align:center;
+                         color:var(--text-muted);">
+                {{ result.total_fat }}%
+              </td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Feeding Tips -->
+      <div style="background:#fffbeb;border:1px solid #fde68a;
+                  border-radius:var(--radius);padding:16px;font-size:14px;">
+        <strong>
+          💡 Feeding Tips for {{ result.purpose|capfirst }} Pigeons:
+        </strong>
+        <ul style="margin:8px 0 0 16px;color:var(--text-muted);line-height:1.9;">
+          {% if result.purpose == 'racing' %}
+            <li>Feed 30–35g per bird per day during training.</li>
+            <li>Increase corn 2–3 days before a race for extra energy.</li>
+            <li>Add flaxseed for omega-3 and feather condition.</li>
+            <li>Provide grit and minerals separately.</li>
+          {% elif result.purpose == 'breeding' %}
+            <li>Feed 40–45g per pair per day.</li>
+            <li>Increase mung beans and lentils during egg laying.</li>
+            <li>Sunflower and safflower support chick development.</li>
+            <li>Ensure fresh water is always available.</li>
+          {% elif result.purpose == 'molting' %}
+            <li>Feed 35–40g per bird per day.</li>
+            <li>High protein supports fast feather regrowth.</li>
+            <li>Niger and sesame seeds improve plumage quality.</li>
+            <li>Flaxseed adds omega-3 for healthy new feathers.</li>
+          {% elif result.purpose == 'young' %}
+            <li>Start with 20g per bird per day, increase gradually.</li>
+            <li>Mung beans and canary seed are easy to digest.</li>
+            <li>Avoid large hard grains for birds under 4 weeks.</li>
+            <li>Ensure soft grains are accessible for young birds.</li>
+          {% else %}
+            <li>Feed 30–35g per bird per day.</li>
+            <li>Adjust based on activity level and season.</li>
+            <li>Always provide clean fresh water and grit.</li>
+          {% endif %}
+        </ul>
+      </div>
+
+    </div>
+
+    {% else %}
+
+    <!-- Empty state -->
+    <div style="display:flex;align-items:center;justify-content:center;
+                padding:80px 0;color:var(--text-muted);text-align:center;">
+      <div>
+        <p style="font-size:56px;margin-bottom:16px;">🌾</p>
+        <p style="font-size:17px;font-weight:600;margin-bottom:8px;">
+          Select a purpose to get started
+        </p>
+        <p style="font-size:14px;">
+          Choose a purpose on the left and click Generate Formula.
+        </p>
+      </div>
+    </div>
+
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

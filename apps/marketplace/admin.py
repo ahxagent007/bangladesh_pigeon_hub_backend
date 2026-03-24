@@ -53,7 +53,7 @@ class ListingAdmin(admin.ModelAdmin):
     pigeon_link.short_description = 'Pigeon'
 
     def price_display(self, obj):
-        return format_html('<b>${}</b>', obj.price)
+        return format_html('<b>BDT{}</b>', obj.price)
     price_display.short_description = 'Price'
 
     def status_badge(self, obj):
@@ -112,5 +112,5 @@ class SavedListingAdmin(admin.ModelAdmin):
     listing_title.short_description = 'Listing'
 
     def listing_price(self, obj):
-        return format_html('<b>${}</b>', obj.listing.price)
+        return format_html('<b>BDT{}</b>', obj.listing.price)
     listing_price.short_description = 'Price'

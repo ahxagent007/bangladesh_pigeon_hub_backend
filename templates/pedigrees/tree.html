@@ -3,193 +3,335 @@
 {% block content %}
 <div class="container section">
 
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;
+              align-items:flex-start;margin-bottom:24px;">
     <div>
-      <h1 style="font-size:22px;margin-bottom:4px;">Pedigree: {{ pigeon.name }}</h1>
+      <h1 style="font-size:22px;margin-bottom:4px;">
+        Pedigree: {{ pigeon.name }}
+      </h1>
       <p style="color:var(--text-muted);font-size:14px;">
         {{ pigeon.breed|default:'Unknown Breed' }} ·
         Ring: {{ pigeon.ring_number|default:'—' }}
       </p>
     </div>
     {% if can_edit %}
-      <a href="/pedigree/{{ pigeon.id }}/edit/" class="btn-outline">Edit Pedigree</a>
+      <a href="/pedigree/{{ pigeon.id }}/edit/"
+         class="btn-outline">Edit Pedigree</a>
     {% endif %}
   </div>
 
   {% if record %}
     <div class="card" style="padding:24px;overflow-x:auto;">
 
-      <!-- Generation labels -->
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;
-                  margin-bottom:8px;text-align:center;">
-        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;">
-          Subject</div>
-        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;">
-          Parents</div>
-        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;">
-          Grandparents</div>
-        <div style="font-size:12px;color:var(--text-muted);text-transform:uppercase;">
-          Great-grandparents</div>
+      <!-- Generation Labels -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);
+                  gap:8px;margin-bottom:12px;text-align:center;">
+        <div style="font-size:11px;color:var(--text-muted);
+                    text-transform:uppercase;letter-spacing:.5px;">
+          Subject
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);
+                    text-transform:uppercase;letter-spacing:.5px;">
+          Parents
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);
+                    text-transform:uppercase;letter-spacing:.5px;">
+          Grandparents
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);
+                    text-transform:uppercase;letter-spacing:.5px;">
+          Great-grandparents
+        </div>
       </div>
 
-      <!-- SVG Pedigree Tree -->
-      <div id="pedigree-container"></div>
+      <!-- Pedigree Tree Container -->
+      <div id="pedigree-svg-container"
+           style="min-height:300px;overflow-x:auto;">
+      </div>
 
-      <!-- Context JSON for JS rendering -->
-      <script>
-        const pedigreeData = {
-          id: {{ pigeon.id }},
-          name: "{{ pigeon.name }}",
-          breed: "{{ pigeon.breed|default:'Unknown' }}",
-          ring: "{{ pigeon.ring_number|default:'' }}",
-          gender: "{{ pigeon.gender }}",
-          {% if record.sire %}
-          sire: {
-            id: {{ record.sire.id }},
-            name: "{{ record.sire.name }}",
-            breed: "{{ record.sire.breed|default:'Unknown' }}",
-            ring: "{{ record.sire.ring_number|default:'' }}",
-            {% if record.sire.pedigree %}
-            sire: {% if record.sire.pedigree.sire %}{ name: "{{ record.sire.pedigree.sire.name }}", breed: "{{ record.sire.pedigree.sire.breed|default:'?' }}" }{% else %}null{% endif %},
-            dam:  {% if record.sire.pedigree.dam  %}{ name: "{{ record.sire.pedigree.dam.name }}",  breed: "{{ record.sire.pedigree.dam.breed|default:'?' }}" }{% else %}null{% endif %}
-            {% else %}sire: null, dam: null{% endif %}
-          },
-          {% else %}sire: null,{% endif %}
-          {% if record.dam %}
-          dam: {
-            id: {{ record.dam.id }},
-            name: "{{ record.dam.name }}",
-            breed: "{{ record.dam.breed|default:'Unknown' }}",
-            ring: "{{ record.dam.ring_number|default:'' }}",
-            {% if record.dam.pedigree %}
-            sire: {% if record.dam.pedigree.sire %}{ name: "{{ record.dam.pedigree.sire.name }}", breed: "{{ record.dam.pedigree.sire.breed|default:'?' }}" }{% else %}null{% endif %},
-            dam:  {% if record.dam.pedigree.dam  %}{ name: "{{ record.dam.pedigree.dam.name }}",  breed: "{{ record.dam.pedigree.dam.breed|default:'?' }}" }{% else %}null{% endif %}
-            {% else %}sire: null, dam: null{% endif %}
-          }
-          {% else %}dam: null{% endif %}
-        };
-        renderPedigreeTree(pedigreeData);
-      </script>
     </div>
 
   {% else %}
     <div class="card" style="padding:60px;text-align:center;">
       <p style="font-size:48px;margin-bottom:16px;">🌳</p>
-      <p style="color:var(--text-muted);margin-bottom:20px;">
-        No pedigree record found for {{ pigeon.name }}.
+      <p style="color:var(--text-muted);margin-bottom:20px;font-size:16px;">
+        No pedigree record found for <strong>{{ pigeon.name }}</strong>.
       </p>
       {% if can_edit %}
-        <a href="/pedigree/{{ pigeon.id }}/edit/" class="btn-primary">Add Pedigree</a>
+        <a href="/pedigree/{{ pigeon.id }}/edit/"
+           class="btn-primary">Add Pedigree</a>
       {% endif %}
     </div>
   {% endif %}
 
 </div>
 {% endblock %}
-{% block extra_js %}
-<script>
-function renderPedigreeTree(data) {
-  const container = document.getElementById('pedigree-container');
-  if (!container) return;
 
-  const NODE_W = 160, NODE_H = 52, GAP_X = 24, GAP_Y = 14;
-  const COLS = 4;
-  const totalH = 8 * (NODE_H + GAP_Y) + 40;
-  const totalW = COLS * NODE_W + (COLS - 1) * GAP_X + 80;
+{% block extra_js %}
+{% if record %}
+<script>
+// ── Build pedigree data safely from Django template ──────────────────────
+const PIGEON = {
+  id:    {{ pigeon.id }},
+  name:  "{{ pigeon.name|escapejs }}",
+  breed: "{{ pigeon.breed|default:'Unknown'|escapejs }}",
+  ring:  "{{ pigeon.ring_number|default:''|escapejs }}",
+  gender: "{{ pigeon.gender }}"
+};
+
+{% if record.sire %}
+const SIRE = {
+  id:    {{ record.sire.id }},
+  name:  "{{ record.sire.name|escapejs }}",
+  breed: "{{ record.sire.breed|default:'Unknown'|escapejs }}",
+  ring:  "{{ record.sire.ring_number|default:''|escapejs }}",
+  sire:  {% if record.sire.pedigree and record.sire.pedigree.sire %}
+           { id: {{ record.sire.pedigree.sire.id }},
+             name: "{{ record.sire.pedigree.sire.name|escapejs }}",
+             breed: "{{ record.sire.pedigree.sire.breed|default:'Unknown'|escapejs }}" }
+         {% else %} null {% endif %},
+  dam:   {% if record.sire.pedigree and record.sire.pedigree.dam %}
+           { id: {{ record.sire.pedigree.dam.id }},
+             name: "{{ record.sire.pedigree.dam.name|escapejs }}",
+             breed: "{{ record.sire.pedigree.dam.breed|default:'Unknown'|escapejs }}" }
+         {% else %} null {% endif %}
+};
+{% else %}
+const SIRE = null;
+{% endif %}
+
+{% if record.dam %}
+const DAM = {
+  id:    {{ record.dam.id }},
+  name:  "{{ record.dam.name|escapejs }}",
+  breed: "{{ record.dam.breed|default:'Unknown'|escapejs }}",
+  ring:  "{{ record.dam.ring_number|default:''|escapejs }}",
+  sire:  {% if record.dam.pedigree and record.dam.pedigree.sire %}
+           { id: {{ record.dam.pedigree.sire.id }},
+             name: "{{ record.dam.pedigree.sire.name|escapejs }}",
+             breed: "{{ record.dam.pedigree.sire.breed|default:'Unknown'|escapejs }}" }
+         {% else %} null {% endif %},
+  dam:   {% if record.dam.pedigree and record.dam.pedigree.dam %}
+           { id: {{ record.dam.pedigree.dam.id }},
+             name: "{{ record.dam.pedigree.dam.name|escapejs }}",
+             breed: "{{ record.dam.pedigree.dam.breed|default:'Unknown'|escapejs }}" }
+         {% else %} null {% endif %}
+};
+{% else %}
+const DAM = null;
+{% endif %}
+
+// ── Render ────────────────────────────────────────────────────────────────
+(function() {
+  const NW    = 170;   // node width
+  const NH    = 54;    // node height
+  const GAPX  = 32;    // horizontal gap between columns
+  const GAPY  = 12;    // vertical gap between rows
+
+  // 4 columns, 8 rows
+  const COLS  = 4;
+  const ROWS  = 8;
+  const SVG_W = COLS * NW + (COLS - 1) * GAPX + 60;
+  const SVG_H = ROWS * NH + (ROWS - 1) * GAPY + 40;
+
+  // Column x positions
+  function colX(c) { return 20 + c * (NW + GAPX); }
+
+  // Row y positions (centred in their slot)
+  function rowY(r) { return 20 + r * (NH + GAPY); }
 
   const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('width', '100%');
-  svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
-  svg.style.overflow = 'visible';
+  svg.setAttribute('viewBox', `0 0 ${SVG_W} ${SVG_H}`);
+  svg.style.minWidth = SVG_W + 'px';
 
-  function col(c) { return 40 + c * (NODE_W + GAP_X); }
-  function row(r) { return 20 + r * (NODE_H + GAP_Y); }
-
-  function drawNode(x, y, p, isSubject) {
-    if (!p) {
-      const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-      rect.setAttribute('x', x); rect.setAttribute('y', y);
-      rect.setAttribute('width', NODE_W); rect.setAttribute('height', NODE_H);
-      rect.setAttribute('rx', 6);
-      rect.setAttribute('fill', '#f3f4f6'); rect.setAttribute('stroke', '#e5e7eb');
-      rect.setAttribute('stroke-width', 1);
-      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      t.setAttribute('x', x + NODE_W/2); t.setAttribute('y', y + NODE_H/2);
-      t.setAttribute('text-anchor', 'middle'); t.setAttribute('dominant-baseline', 'central');
-      t.setAttribute('fill', '#9ca3af'); t.setAttribute('font-size', '12');
-      t.textContent = 'Unknown';
-      g.appendChild(rect); g.appendChild(t);
-      svg.appendChild(g);
-      return;
-    }
+  // ── Helper: draw one node ──────────────────────────────────────────────
+  function drawNode(col, row, data, isSubject) {
+    const x = colX(col);
+    const y = rowY(row);
     const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-    g.style.cursor = p.id ? 'pointer' : 'default';
-    if (p.id) g.onclick = () => window.location.href = `/pedigree/${p.id}/`;
 
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', x); rect.setAttribute('y', y);
-    rect.setAttribute('width', NODE_W); rect.setAttribute('height', NODE_H);
-    rect.setAttribute('rx', 6);
-    rect.setAttribute('fill', isSubject ? '#eff6ff' : '#fff');
-    rect.setAttribute('stroke', isSubject ? '#2563eb' : '#e5e7eb');
-    rect.setAttribute('stroke-width', isSubject ? 2 : 1);
-
-    const name = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    name.setAttribute('x', x + 8); name.setAttribute('y', y + 18);
-    name.setAttribute('fill', '#111827'); name.setAttribute('font-size', '13');
-    name.setAttribute('font-weight', '600');
-    name.textContent = (p.name || '').substring(0, 18);
-
-    const breed = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    breed.setAttribute('x', x + 8); breed.setAttribute('y', y + 36);
-    breed.setAttribute('fill', '#6b7280'); breed.setAttribute('font-size', '11');
-    breed.textContent = (p.breed || '').substring(0, 22);
-
-    g.appendChild(rect); g.appendChild(name); g.appendChild(breed);
-    svg.appendChild(g);
-  }
-
-  function drawLine(x1, y1, x2, y2) {
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    const mx = (x1 + x2) / 2;
-    line.setAttribute('d', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
-    line.setAttribute('fill', 'none');
-    line.setAttribute('stroke', '#d1d5db');
-    line.setAttribute('stroke-width', '1.5');
-    svg.insertBefore(line, svg.firstChild);
-  }
-
-  // Gen 0 — Subject (centered vertically)
-  const subjectRow = 3;
-  const sx = col(0), sy = row(subjectRow) + (NODE_H + GAP_Y) / 2;
-  drawNode(col(0), row(subjectRow) + (NODE_H + GAP_Y)/2 - NODE_H/2, data, true);
-
-  const parentRows = [[0, data.sire, 'Sire'], [4, data.dam, 'Dam']];
-
-  parentRows.forEach(([baseRow, parent, label]) => {
-    const py = row(baseRow) + (NODE_H + GAP_Y * 2);
-    drawNode(col(1), py, parent, false);
-    if (parent) {
-      drawLine(col(0) + NODE_W, sy, col(1), py + NODE_H/2);
-      // Grandparents
-      const gpRows = [baseRow, baseRow + 2];
-      const gpData = parent ? [parent.sire, parent.dam] : [null, null];
-      gpRows.forEach((gpRow, i) => {
-        const gpy = row(gpRow) + (NODE_H + GAP_Y * 1.5);
-        drawNode(col(2), gpy, gpData[i], false);
-        drawLine(col(1) + NODE_W, py + NODE_H/2, col(2), gpy + NODE_H/2);
-        // Great-grandparents
-        [-1, 1].forEach((off, j) => {
-          const ggpy = row(gpRow + off * 0.5) + (NODE_H + GAP_Y * 1.5) + off * (NODE_H + GAP_Y) * 0.5;
-          drawNode(col(3), ggpy - NODE_H * j, null, false);
-          drawLine(col(2) + NODE_W, gpy + NODE_H/2, col(3), ggpy - NODE_H * j + NODE_H/2);
-        });
+    if (data && data.id) {
+      g.style.cursor = 'pointer';
+      g.addEventListener('click', () => {
+        window.location.href = `/pedigree/${data.id}/`;
       });
     }
-  });
 
-  container.appendChild(svg);
-}
+    // Box
+    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    rect.setAttribute('x', x);
+    rect.setAttribute('y', y);
+    rect.setAttribute('width', NW);
+    rect.setAttribute('height', NH);
+    rect.setAttribute('rx', '7');
+
+    if (!data) {
+      // Unknown / empty node
+      rect.setAttribute('fill', '#f3f4f6');
+      rect.setAttribute('stroke', '#e5e7eb');
+      rect.setAttribute('stroke-width', '1');
+      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', x + NW / 2);
+      t.setAttribute('y', y + NH / 2);
+      t.setAttribute('text-anchor', 'middle');
+      t.setAttribute('dominant-baseline', 'central');
+      t.setAttribute('fill', '#9ca3af');
+      t.setAttribute('font-size', '12');
+      t.setAttribute('font-family', 'sans-serif');
+      t.textContent = 'Unknown';
+      g.appendChild(rect);
+      g.appendChild(t);
+      svg.appendChild(g);
+      return { x, y };
+    }
+
+    // Filled node
+    rect.setAttribute('fill', isSubject ? '#eff6ff' : '#ffffff');
+    rect.setAttribute('stroke', isSubject ? '#2563eb' : '#d1d5db');
+    rect.setAttribute('stroke-width', isSubject ? '2' : '1');
+
+    // Name text
+    const name = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    name.setAttribute('x', x + 10);
+    name.setAttribute('y', y + 20);
+    name.setAttribute('fill', '#111827');
+    name.setAttribute('font-size', '13');
+    name.setAttribute('font-weight', '600');
+    name.setAttribute('font-family', 'sans-serif');
+    name.textContent = truncate(data.name, 20);
+
+    // Breed text
+    const breed = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    breed.setAttribute('x', x + 10);
+    breed.setAttribute('y', y + 36);
+    breed.setAttribute('fill', '#6b7280');
+    breed.setAttribute('font-size', '11');
+    breed.setAttribute('font-family', 'sans-serif');
+    breed.textContent = truncate(data.breed || 'Unknown', 24);
+
+    // Ring text (if present)
+    if (data.ring) {
+      const ring = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      ring.setAttribute('x', x + 10);
+      ring.setAttribute('y', y + 49);
+      ring.setAttribute('fill', '#9ca3af');
+      ring.setAttribute('font-size', '10');
+      ring.setAttribute('font-family', 'sans-serif');
+      ring.textContent = data.ring;
+      g.appendChild(ring);
+    }
+
+    g.appendChild(rect);
+    g.appendChild(name);
+    g.appendChild(breed);
+    svg.appendChild(g);
+    return { x, y };
+  }
+
+  // ── Helper: draw connector line ────────────────────────────────────────
+  function drawLine(x1, y1, x2, y2) {
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const mx   = (x1 + x2) / 2;
+    path.setAttribute(
+      'd', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`
+    );
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', '#d1d5db');
+    path.setAttribute('stroke-width', '1.5');
+    // Insert lines behind nodes
+    svg.insertBefore(path, svg.firstChild);
+  }
+
+  function truncate(str, max) {
+    if (!str) return '';
+    return str.length > max ? str.substring(0, max - 1) + '…' : str;
+  }
+
+  // ── Layout: subject at row 3.5 (vertically centred) ───────────────────
+  // Subject — col 0, vertically centred
+  const subjectRow = 3;
+  drawNode(0, subjectRow, PIGEON, true);
+  const subjectMidY = rowY(subjectRow) + NH / 2;
+  const subjectRightX = colX(0) + NW;
+
+  // ── Sire (top half) ────────────────────────────────────────────────────
+  const sireRow = 1;
+  drawNode(1, sireRow, SIRE, false);
+  const sireMidY    = rowY(sireRow) + NH / 2;
+  const sireRightX  = colX(1) + NW;
+  const sireLeftX   = colX(1);
+
+  // Connect subject → sire
+  drawLine(subjectRightX, subjectMidY, sireLeftX, sireMidY);
+
+  if (SIRE) {
+    // Sire's sire — row 0
+    drawNode(2, 0, SIRE.sire, false);
+    const ssY = rowY(0) + NH / 2;
+    drawLine(sireRightX, sireMidY, colX(2), ssY);
+
+    // Sire's sire's parents — col 3
+    drawNode(3, 0, null, false);
+    drawLine(colX(2) + NW, ssY, colX(3), rowY(0) + NH / 2);
+
+    // Sire's dam — row 2
+    drawNode(2, 2, SIRE.dam, false);
+    const sdY = rowY(2) + NH / 2;
+    drawLine(sireRightX, sireMidY, colX(2), sdY);
+
+    // Sire's dam's parents — col 3
+    drawNode(3, 2, null, false);
+    drawLine(colX(2) + NW, sdY, colX(3), rowY(2) + NH / 2);
+  } else {
+    // No sire — draw empty grandparents
+    drawNode(2, 0, null, false);
+    drawNode(2, 2, null, false);
+    drawNode(3, 0, null, false);
+    drawNode(3, 2, null, false);
+  }
+
+  // ── Dam (bottom half) ──────────────────────────────────────────────────
+  const damRow = 5;
+  drawNode(1, damRow, DAM, false);
+  const damMidY   = rowY(damRow) + NH / 2;
+  const damRightX = colX(1) + NW;
+  const damLeftX  = colX(1);
+
+  // Connect subject → dam
+  drawLine(subjectRightX, subjectMidY, damLeftX, damMidY);
+
+  if (DAM) {
+    // Dam's sire — row 4
+    drawNode(2, 4, DAM.sire, false);
+    const dsY = rowY(4) + NH / 2;
+    drawLine(damRightX, damMidY, colX(2), dsY);
+
+    // Dam's sire's parents — col 3
+    drawNode(3, 4, null, false);
+    drawLine(colX(2) + NW, dsY, colX(3), rowY(4) + NH / 2);
+
+    // Dam's dam — row 6
+    drawNode(2, 6, DAM.dam, false);
+    const ddY = rowY(6) + NH / 2;
+    drawLine(damRightX, damMidY, colX(2), ddY);
+
+    // Dam's dam's parents — col 3
+    drawNode(3, 6, null, false);
+    drawLine(colX(2) + NW, ddY, colX(3), rowY(6) + NH / 2);
+  } else {
+    // No dam — draw empty grandparents
+    drawNode(2, 4, null, false);
+    drawNode(2, 6, null, false);
+    drawNode(3, 4, null, false);
+    drawNode(3, 6, null, false);
+  }
+
+  // ── Mount SVG ─────────────────────────────────────────────────────────
+  document.getElementById('pedigree-svg-container').appendChild(svg);
+
+})();
 </script>
+{% endif %}
 {% endblock %}

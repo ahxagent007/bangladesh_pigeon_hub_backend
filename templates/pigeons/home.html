@@ -88,7 +88,7 @@
                 {% if pigeon.breed %}{{ pigeon.breed.name }}{% else %}Unknown Breed{% endif %}
                 · {{ pigeon.get_gender_display }}
               </div>
-              <div class="card-price">${{ pigeon.listing.price }}</div>
+              <div class="card-price">BDT{{ pigeon.listing.price }}</div>
               <div style="display:flex;justify-content:space-between;
                           align-items:center;font-size:12px;color:var(--text-muted);">
                 <span>📍 {{ pigeon.listing.location }}</span>

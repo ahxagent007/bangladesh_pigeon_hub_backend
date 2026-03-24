@@ -4,8 +4,9 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/',      admin.site.urls),
-    # Web
+    path('admin/', admin.site.urls),
+
+    # ── Web pages ──
     path('',            include('apps.pigeons.urls')),
     path('auth/',       include('apps.users.urls')),
     path('dashboard/',  include('apps.users.dashboard_urls')),
@@ -13,6 +14,8 @@ urlpatterns = [
     path('pedigree/',   include('apps.pedigrees.urls')),
     path('feed/',       include('apps.feed_generator.urls')),
     path('messages/',   include('apps.messaging.urls')),
-    # REST API
+
+    # ── REST API ──
     path('api/',        include('apps.api_urls')),
+
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

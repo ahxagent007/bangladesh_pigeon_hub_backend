@@ -26,7 +26,7 @@ def pigeon_detail_view(request, pk):
         Pigeon.objects.select_related('breed', 'owner').prefetch_related('images'),
         pk=pk
     )
-    return render(request, 'pigeons/pigeon_detail.html.html', {'pigeon': pigeon})
+    return render(request, 'pigeons/pigeon_detail.html', {'pigeon': pigeon})
 
 @login_required
 def add_pigeon_view(request):

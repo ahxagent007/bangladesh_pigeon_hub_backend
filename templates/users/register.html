@@ -7,9 +7,9 @@
     <form method="post" novalidate>
       {% csrf_token %}
       <div class="form-group">
-        <label>Username</label>
+        <label>Username or Phone Number</label>
         <input type="text" name="username" value="{{ form.username.value|default:'' }}"
-               placeholder="Choose a username" required>
+               placeholder="Unique username or phone number" required>
         {% if form.username.errors %}
           <div class="form-error">{{ form.username.errors.0 }}</div>{% endif %}
       </div>

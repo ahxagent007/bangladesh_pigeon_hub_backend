@@ -1,17 +1,58 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db.models import Prefetch
 from .models import Pigeon, PigeonImage, Breed
 from .forms import PigeonForm, PigeonImageForm
 
 def home_view(request):
-    featured = Pigeon.objects.filter(
-        is_for_sale=True
-    ).select_related('breed').prefetch_related('images').order_by('-created_at')[:8]
+    featured = (
+        Pigeon.objects.filter(is_for_sale=True)
+        .select_related('breed')
+        .prefetch_related('images')
+        .order_by('-created_at')[:8]
+    )
     breeds = Breed.objects.all()
+
+    from apps.wall.models import Post, Like
+    recent_posts = (
+        Post.objects
+        .select_related('author', 'pigeon__breed')
+        .prefetch_related('images', 'likes', 'comments')
+        .order_by('-created_at')[:6]
+    )
+    liked_post_ids = set()
+    if request.user.is_authenticated:
+        liked_post_ids = set(
+            Like.objects.filter(user=request.user).values_list('post_id', flat=True)
+        )
+
+    from django.utils import timezone
+    from apps.auctions.models import Auction
+    now = timezone.now()
+    # Auto-activate upcoming auctions that have started
+    Auction.objects.filter(status='upcoming', start_time__lte=now).update(status='live')
+
+    live_auctions = (
+        Auction.objects.filter(status='live')
+        .select_related('seller', 'pigeon__breed')
+        .prefetch_related('gallery', 'pigeon__images')
+        .order_by('end_time')[:6]
+    )
+    upcoming_auctions = (
+        Auction.objects.filter(status='upcoming')
+        .select_related('seller', 'pigeon__breed')
+        .prefetch_related('gallery', 'pigeon__images')
+        .order_by('start_time')[:4]
+    )
+
     return render(request, 'pigeons/home.html', {
-        'featured': featured,
-        'breeds': breeds,
+        'featured':          featured,
+        'breeds':            breeds,
+        'recent_posts':      recent_posts,
+        'liked_post_ids':    liked_post_ids,
+        'live_auctions':     live_auctions,
+        'upcoming_auctions': upcoming_auctions,
     })
 
 @login_required

@@ -14,6 +14,12 @@ urlpatterns = [
     path('pedigree/',   include('apps.pedigrees.urls')),
     path('feed/',       include('apps.feed_generator.urls')),
     path('messages/',   include('apps.messaging.urls')),
+    path('offers/',     include('apps.marketplace.offer_urls')),
+    path('wall/',          include('apps.wall.urls')),
+    path('notifications/', include('apps.notifications.urls')),
+    path('contests/',      include('apps.contests.urls')),
+    path('users/',         include('apps.users.profile_urls')),
+    path('auctions/',      include('apps.auctions.urls')),
 
     # ── REST API ──
     path('api/',        include('apps.api_urls')),

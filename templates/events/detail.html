@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}{{ event.title }} — BPH{% endblock %}
+{% block content %}
+<div class="container" style="max-width:720px;padding:36px 16px 80px;">
+  {% if event.image %}<img src="{{ event.image.url }}" style="width:100%;border-radius:14px;margin-bottom:24px;max-height:360px;object-fit:cover;" alt="">{% endif %}
+  <div style="display:flex;gap:12px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+    <span style="background:var(--primary);color:white;padding:4px 14px;border-radius:999px;font-size:12px;font-weight:700;">{{ event.get_event_type_display }}</span>
+    <span style="font-size:13px;color:var(--text-muted);">📍 {{ event.location }}, {{ event.get_district_display }}</span>
+  </div>
+  <h1 style="font-size:26px;font-weight:800;margin-bottom:8px;">{{ event.title }}</h1>
+  <div style="display:flex;gap:20px;font-size:14px;color:var(--text-muted);margin-bottom:20px;flex-wrap:wrap;">
+    <span>📅 {{ event.date|date:"l, d F Y" }}{% if event.time %} · {{ event.time|time:"g:i A" }}{% endif %}</span>
+    <span>👤 by <a href="/users/{{ event.organizer.username }}/" style="color:var(--primary);">{{ event.organizer.username }}</a></span>
+  </div>
+  <div style="background:white;border:1px solid var(--border);border-radius:12px;padding:24px;line-height:1.8;font-size:15px;">
+    {{ event.description|linebreaksbr }}
+  </div>
+  <div style="margin-top:20px;"><a href="/events/" style="color:var(--primary);font-size:14px;">← Back to Events</a></div>
+</div>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}Photo Contests — BPH{% endblock %}
+{% block content %}
+<div class="container" style="padding:36px 16px 80px;">
+  <h1 style="font-size:24px;font-weight:800;margin-bottom:4px;">🏆 Pigeon Photo Contests</h1>
+  <p style="color:var(--text-muted);margin-bottom:28px;">Show off your best birds and win the community vote!</p>
+
+  {% if active %}
+  <h2 style="font-size:18px;font-weight:700;margin-bottom:14px;">🔥 Active Contests</h2>
+  {% for c in active %}
+  <a href="/contests/{{ c.pk }}/" class="contest-card">
+    <div class="cc-icon">🏆</div>
+    <div class="cc-body">
+      <div class="cc-title">{{ c.title }}</div>
+      <div class="cc-meta">Entry deadline: <strong>{{ c.end_date|date:"d M Y" }}</strong> · Voting until: <strong>{{ c.voting_end_date|date:"d M Y" }}</strong></div>
+      <div class="cc-desc">{{ c.description|truncatechars:100 }}</div>
+      <div class="cc-entries">{{ c.entries.count }} entries</div>
+    </div>
+    <div class="cc-cta">Enter Now →</div>
+  </a>
+  {% endfor %}
+  {% else %}
+  <div style="text-align:center;padding:60px;background:white;border-radius:12px;border:2px dashed var(--border);">
+    <div style="font-size:48px;margin-bottom:12px;">🏆</div>
+    <p style="color:var(--text-muted);">No active contests right now. Check back soon!</p>
+  </div>
+  {% endif %}
+
+  {% if past %}
+  <h2 style="font-size:18px;font-weight:700;margin-top:36px;margin-bottom:14px;">🕐 Past Contests</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;">
+    {% for c in past %}
+    <a href="/contests/{{ c.pk }}/" style="background:white;border:1px solid var(--border);border-radius:10px;padding:16px;text-decoration:none;color:inherit;display:block;">
+      <div style="font-weight:700;margin-bottom:4px;">{{ c.title }}</div>
+      <div style="font-size:12px;color:var(--text-muted);">{{ c.entries.count }} entries · ended {{ c.voting_end_date|date:"M Y" }}</div>
+      {% if c.winner %}<div style="margin-top:8px;font-size:12px;background:#fef3c7;padding:4px 10px;border-radius:6px;">🏆 Winner: {{ c.winner.user.username }}</div>{% endif %}
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+<style>
+.contest-card { display:flex;align-items:center;gap:20px;background:white;border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:14px;text-decoration:none;color:inherit;transition:transform .18s,box-shadow .18s; }
+.contest-card:hover { transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1); }
+.cc-icon { font-size:40px;flex-shrink:0; }
+.cc-body { flex:1; }
+.cc-title { font-size:18px;font-weight:700;margin-bottom:4px; }
+.cc-meta { font-size:12px;color:var(--text-muted);margin-bottom:6px; }
+.cc-desc { font-size:14px;color:var(--text-muted); }
+.cc-entries { margin-top:6px;font-size:12px;font-weight:600;color:var(--primary); }
+.cc-cta { background:var(--primary);color:white;padding:10px 20px;border-radius:8px;font-weight:700;font-size:14px;white-space:nowrap;flex-shrink:0; }
+</style>
+{% endblock %}

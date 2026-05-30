@@ -1,0 +1,545 @@
+{% extends 'base.html' %}
+{% block title %}Create Auction — BPH{% endblock %}
+
+{% block content %}
+<div class="ac-page">
+  <div class="container">
+
+    <!-- Page header -->
+    <div class="ac-header">
+      <div class="ac-header-text">
+        <h1>🔨 Create an Auction</h1>
+        <p>Set up a live bidding auction — any user can bid, winner takes the pigeon.</p>
+      </div>
+      <!-- Step indicator -->
+      <div class="ac-steps-row">
+        <div class="ac-step ac-step--done" id="si-1"><span>1</span> Pigeon</div>
+        <div class="ac-step-line"></div>
+        <div class="ac-step" id="si-2"><span>2</span> Details</div>
+        <div class="ac-step-line"></div>
+        <div class="ac-step" id="si-3"><span>3</span> Pricing</div>
+        <div class="ac-step-line"></div>
+        <div class="ac-step" id="si-4"><span>4</span> Schedule</div>
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="create-form">
+      {% csrf_token %}
+
+      <!-- ── STEP 1: Pigeon / Image ── -->
+      <div class="ac-card" id="step-1">
+        <div class="ac-card-label">Step 1 — What are you auctioning?</div>
+
+        <div class="ac-mode-row">
+          <label class="ac-mode-opt ac-mode-opt--active" id="opt-pigeon" for="mode-pigeon">
+            <input type="radio" id="mode-pigeon" name="__mode" value="pigeon"
+                   checked onchange="switchMode('pigeon')">
+            <div class="ac-mode-icon">🐦</div>
+            <div>
+              <div class="ac-mode-title">From my flock</div>
+              <div class="ac-mode-desc">Choose a pigeon you've already added</div>
+            </div>
+            <div class="ac-mode-check">✓</div>
+          </label>
+
+          <label class="ac-mode-opt" id="opt-image" for="mode-image">
+            <input type="radio" id="mode-image" name="__mode" value="image"
+                   onchange="switchMode('image')">
+            <div class="ac-mode-icon">📸</div>
+            <div>
+              <div class="ac-mode-title">Upload a photo</div>
+              <div class="ac-mode-desc">Standalone auction with a custom image</div>
+            </div>
+            <div class="ac-mode-check">✓</div>
+          </label>
+        </div>
+
+        <!-- Pigeon picker grid -->
+        <div id="pigeon-section">
+          {% if user_pigeons %}
+            <input type="hidden" name="pigeon_id" id="pigeon-id">
+            <div id="pigeon-hint" class="ac-pigeon-hint" style="display:none;">
+              ✅ <strong id="pigeon-hint-name"></strong> selected — title auto-filled below.
+            </div>
+            <div class="ac-pigeon-grid">
+              {% for pig in user_pigeons %}
+              <div class="ac-pigeon-card" id="pig-{{ pig.pk }}"
+                   onclick="selectPigeon('{{ pig.pk }}','{{ pig.name|escapejs }}','{{ pig.breed.name|default:"Unknown Breed"|escapejs }}')">
+                <div class="ac-pigeon-img">
+                  {% with img=pig.primary_image %}
+                    {% if img %}
+                      <img src="{{ img.image.url }}" alt="{{ pig.name }}">
+                    {% else %}
+                      <span>🐦</span>
+                    {% endif %}
+                  {% endwith %}
+                </div>
+                <div class="ac-pigeon-info">
+                  <div class="ac-pigeon-name">{{ pig.name }}</div>
+                  <div class="ac-pigeon-meta">
+                    {% if pig.breed %}{{ pig.breed.name }}{% else %}Unknown{% endif %}
+                    · {{ pig.get_gender_display }}
+                    {% if pig.ring_number %}<br><span style="color:#9ca3af;">Ring: {{ pig.ring_number }}</span>{% endif %}
+                  </div>
+                </div>
+                <div class="ac-pigeon-tick">✓</div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="ac-empty-flock">
+              <span style="font-size:32px;">🐦</span>
+              <p>No pigeons in your profile yet.</p>
+              <a href="/pigeons/add/" class="btn-primary btn-sm">Add a Pigeon</a>
+              <span style="color:var(--text-muted);font-size:13px;">— or switch to "Upload a photo" above.</span>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Image upload (shown for 'image' mode; hidden for 'pigeon' mode handled below) -->
+        <div id="image-section" style="display:none;">
+          <div class="ac-upload-box" id="main-upload-box"
+               onclick="document.getElementById('main-img-input').click()">
+            <input type="file" id="main-img-input" name="main_image" accept="image/*"
+                   style="display:none;" onchange="previewMain(this)">
+            <div id="main-placeholder" class="ac-upload-placeholder">
+              <div class="ac-upload-icon">📸</div>
+              <div class="ac-upload-label">Main Photo <span class="ac-req">*</span></div>
+              <div class="ac-upload-hint">Primary image shown in listings — JPG/PNG</div>
+            </div>
+            <img id="main-preview" class="ac-img-preview" src="" alt="" style="display:none;">
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Photos section (always visible after pigeon/mode choice) ── -->
+      <div class="ac-card" id="photos-card">
+        <div class="ac-card-label">Photos</div>
+        <div class="ac-photos-grid">
+
+          <!-- Main photo (required when no pigeon selected) -->
+          <div class="ac-photo-zone" id="pigeon-main-zone">
+            <div class="ac-photo-label">🖼️ Main Photo</div>
+            <div class="ac-upload-box ac-upload-sm" id="pm-upload-box"
+                 onclick="document.getElementById('pm-input').click()">
+              <input type="file" id="pm-input" name="main_image" accept="image/*"
+                     style="display:none;" onchange="previewZone(this,'pm-preview','pm-upload-box')">
+              <div id="pm-placeholder" class="ac-upload-placeholder ac-upload-placeholder--sm">
+                <div class="ac-upload-icon" style="font-size:28px;">📷</div>
+                <div class="ac-upload-label" style="font-size:13px;">Click to upload</div>
+                <div class="ac-upload-hint">Cover image</div>
+              </div>
+              <img id="pm-preview" class="ac-img-preview" src="" alt="" style="display:none;height:160px;">
+            </div>
+          </div>
+
+          <!-- Gallery / additional photos -->
+          <div class="ac-photo-zone">
+            <div class="ac-photo-label">🖼️🖼️ Additional Photos <span class="ac-opt">up to 10</span></div>
+            <div class="ac-upload-box ac-upload-sm" id="gallery-upload-box"
+                 onclick="document.getElementById('gallery-input').click()">
+              <input type="file" id="gallery-input" name="gallery_images"
+                     accept="image/*" multiple style="display:none;"
+                     onchange="handleGallery(this)">
+              <div id="gallery-placeholder" class="ac-upload-placeholder ac-upload-placeholder--sm">
+                <div class="ac-upload-icon" style="font-size:28px;">🖼️</div>
+                <div class="ac-upload-label" style="font-size:13px;">Click to upload</div>
+                <div class="ac-upload-hint">Multiple angles / close-ups</div>
+              </div>
+              <div id="gallery-thumbs" class="ac-gallery-thumbs" style="display:none;"></div>
+            </div>
+          </div>
+
+          <!-- Pedigree photo -->
+          <div class="ac-photo-zone">
+            <div class="ac-photo-label">🏅 Pedigree Photo <span class="ac-opt">optional</span></div>
+            <div class="ac-upload-box ac-upload-sm" id="ped-upload-box"
+                 onclick="document.getElementById('ped-input').click()">
+              <input type="file" id="ped-input" name="pedigree_image" accept="image/*"
+                     style="display:none;"
+                     onchange="previewZone(this,'ped-preview','ped-upload-box')">
+              <div id="ped-placeholder" class="ac-upload-placeholder ac-upload-placeholder--sm">
+                <div class="ac-upload-icon" style="font-size:28px;">🏅</div>
+                <div class="ac-upload-label" style="font-size:13px;">Click to upload</div>
+                <div class="ac-upload-hint">Certificate or chart</div>
+              </div>
+              <img id="ped-preview" class="ac-img-preview" src="" alt="" style="display:none;height:160px;">
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── STEP 2: Details ── -->
+      <div class="ac-card" id="step-2">
+        <div class="ac-card-label">Step 2 — Auction Details</div>
+
+        <div class="ac-field">
+          <label class="ac-label">Listing Title <span class="ac-req">*</span></label>
+          <input type="text" name="title" id="auc-title" class="ac-input"
+                 placeholder="e.g. Champion Racing Homer — Open Auction" required maxlength="200">
+          <div class="ac-help">A descriptive title gets more views and bids.</div>
+        </div>
+
+        <div class="ac-field">
+          <label class="ac-label">Description <span class="ac-req">*</span></label>
+          <textarea name="description" rows="5" class="ac-input" required
+                    placeholder="Health records, achievements, lineage, ring number, why you're auctioning..."></textarea>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: Pricing ── -->
+      <div class="ac-card" id="step-3">
+        <div class="ac-card-label">Step 3 — Pricing</div>
+
+        <div class="ac-two-col">
+          <div class="ac-field">
+            <label class="ac-label">Starting Price (BDT) <span class="ac-req">*</span></label>
+            <div class="ac-prefix-wrap">
+              <span class="ac-prefix">৳</span>
+              <input type="number" name="starting_price" class="ac-input ac-prefix-input"
+                     min="1" step="1" placeholder="1,000" required>
+            </div>
+            <div class="ac-help">Bidding opens at this price.</div>
+          </div>
+          <div class="ac-field">
+            <label class="ac-label">Reserve Price (BDT)
+              <span class="ac-opt">optional</span>
+            </label>
+            <div class="ac-prefix-wrap">
+              <span class="ac-prefix">৳</span>
+              <input type="number" name="reserve_price" class="ac-input ac-prefix-input"
+                     min="1" step="1" placeholder="Hidden minimum">
+            </div>
+            <div class="ac-help">Auction fails if bids don't reach this. Hidden from bidders.</div>
+          </div>
+        </div>
+
+        <div class="ac-two-col">
+          <div class="ac-field">
+            <label class="ac-label">Minimum Bid Increment (BDT)</label>
+            <div class="ac-prefix-wrap">
+              <span class="ac-prefix">৳</span>
+              <input type="number" name="min_increment" class="ac-input ac-prefix-input"
+                     min="1" step="1" value="50">
+            </div>
+            <div class="ac-help">Each new bid must beat current by at least this amount.</div>
+          </div>
+          <div class="ac-field">
+            <label class="ac-label">Anti-Snipe Extension</label>
+            <div class="ac-suffix-wrap">
+              <input type="number" name="anti_snipe_min" class="ac-input ac-suffix-input"
+                     min="0" max="15" value="2">
+              <span class="ac-suffix">min</span>
+            </div>
+            <div class="ac-help">If a bid arrives in the final N minutes, the clock extends by N minutes.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 4: Schedule ── -->
+      <div class="ac-card" id="step-4">
+        <div class="ac-card-label">Step 4 — Schedule</div>
+
+        <div class="ac-two-col">
+          <div class="ac-field">
+            <label class="ac-label">Start Time <span class="ac-req">*</span></label>
+            <input type="datetime-local" name="start_time" id="start-time" class="ac-input" required>
+            <div class="ac-help">Leave as-is to start immediately.</div>
+          </div>
+          <div class="ac-field">
+            <label class="ac-label">End Time <span class="ac-req">*</span></label>
+            <input type="datetime-local" name="end_time" id="end-time" class="ac-input" required>
+            <div class="ac-help">Min 1 hour · Max 30 days from start.</div>
+          </div>
+        </div>
+
+        <!-- Duration chips -->
+        <div class="ac-duration-chips">
+          <span class="ac-duration-label">Quick set duration:</span>
+          <button type="button" class="ac-chip" onclick="setDuration(1)">1 hour</button>
+          <button type="button" class="ac-chip" onclick="setDuration(6)">6 hours</button>
+          <button type="button" class="ac-chip" onclick="setDuration(24)">1 day</button>
+          <button type="button" class="ac-chip" onclick="setDuration(72)">3 days</button>
+          <button type="button" class="ac-chip" onclick="setDuration(168)">7 days</button>
+        </div>
+      </div>
+
+      <!-- ── Submit ── -->
+      <div class="ac-submit-row">
+        <button type="submit" class="ac-submit-btn">🔨 Launch Auction</button>
+        <a href="/auctions/" class="ac-cancel-link">Cancel</a>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<style>
+/* ── Page shell ── */
+.ac-page { background:#f0f2f5; min-height:100vh; padding:36px 0 80px; }
+.ac-page .container { max-width:720px; }
+
+/* ── Header ── */
+.ac-header { margin-bottom:28px; display:flex; flex-direction:column; gap:20px; }
+.ac-header h1 { font-size:24px; font-weight:800; margin-bottom:4px; }
+.ac-header p  { color:var(--text-muted); font-size:14px; }
+
+/* Step indicator */
+.ac-steps-row { display:flex; align-items:center; gap:0; background:white; border:1px solid var(--border); border-radius:10px; padding:12px 16px; }
+.ac-step { display:flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--text-muted); flex:1; justify-content:center; }
+.ac-step span { width:22px; height:22px; border-radius:50%; background:var(--border); color:var(--text-muted); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; flex-shrink:0; }
+.ac-step--done span { background:var(--primary); color:white; }
+.ac-step--done { color:var(--primary); }
+.ac-step-line { flex:1; height:2px; background:var(--border); max-width:48px; }
+
+/* ── Card / Step wrapper ── */
+.ac-card { background:white; border:1px solid var(--border); border-radius:14px; padding:26px 28px; margin-bottom:18px; }
+.ac-card-label { font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); margin-bottom:20px; }
+
+/* ── Mode picker ── */
+.ac-mode-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+.ac-mode-opt {
+  display:flex; align-items:center; gap:14px;
+  border:2px solid var(--border); border-radius:12px;
+  padding:16px 18px; cursor:pointer;
+  transition:border-color .15s, background .15s;
+  position:relative;
+}
+.ac-mode-opt input[type=radio] { position:absolute; opacity:0; pointer-events:none; }
+.ac-mode-opt--active { border-color:var(--primary); background:#fff7ed; }
+.ac-mode-icon  { font-size:26px; flex-shrink:0; }
+.ac-mode-title { font-weight:700; font-size:14px; margin-bottom:2px; }
+.ac-mode-desc  { font-size:12px; color:var(--text-muted); }
+.ac-mode-check {
+  width:22px; height:22px; border-radius:50%; border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700; color:transparent;
+  margin-left:auto; flex-shrink:0; transition:all .15s;
+}
+.ac-mode-opt--active .ac-mode-check { background:var(--primary); border-color:var(--primary); color:white; }
+
+/* ── Pigeon picker ── */
+.ac-pigeon-hint { background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:10px 14px; font-size:13px; color:#9a3412; margin-bottom:14px; }
+.ac-pigeon-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:10px; }
+.ac-pigeon-card {
+  display:flex; align-items:center; gap:12px;
+  border:2px solid var(--border); border-radius:10px;
+  padding:12px 14px; cursor:pointer;
+  transition:border-color .15s, background .15s;
+  position:relative;
+}
+.ac-pigeon-card:hover { border-color:#fdba74; background:#fff7ed; }
+.ac-pigeon-card.selected { border-color:var(--primary); background:#fff7ed; }
+.ac-pigeon-img { width:50px; height:50px; border-radius:8px; overflow:hidden; flex-shrink:0; background:#f3f4f6; display:flex; align-items:center; justify-content:center; font-size:24px; }
+.ac-pigeon-img img { width:100%; height:100%; object-fit:cover; }
+.ac-pigeon-info { flex:1; min-width:0; }
+.ac-pigeon-name { font-weight:700; font-size:14px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ac-pigeon-meta { font-size:12px; color:var(--text-muted); margin-top:2px; }
+.ac-pigeon-tick {
+  width:20px; height:20px; border-radius:50%; border:2px solid var(--border);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; color:transparent; flex-shrink:0; transition:all .15s;
+}
+.ac-pigeon-card.selected .ac-pigeon-tick { background:var(--primary); border-color:var(--primary); color:white; }
+
+.ac-empty-flock { display:flex; align-items:center; gap:12px; flex-wrap:wrap; padding:20px; background:#f9fafb; border:2px dashed var(--border); border-radius:10px; font-size:14px; color:var(--text-muted); }
+
+/* ── Image upload ── */
+.ac-upload-box { border:2px dashed var(--border); border-radius:12px; cursor:pointer; overflow:hidden; transition:border-color .15s; }
+.ac-upload-box:hover { border-color:var(--primary); }
+.ac-upload-placeholder { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:48px 24px; gap:8px; }
+.ac-upload-icon  { font-size:40px; }
+.ac-upload-label { font-weight:600; font-size:15px; color:var(--text); }
+.ac-upload-hint  { font-size:12px; color:var(--text-muted); }
+.ac-img-preview  { width:100%; max-height:320px; object-fit:cover; display:block; }
+
+/* ── Form fields ── */
+.ac-two-col { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.ac-field    { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+.ac-field:last-child { margin-bottom:0; }
+.ac-label    { font-size:14px; font-weight:600; color:var(--text); }
+.ac-req      { color:#ef4444; margin-left:2px; }
+.ac-opt      { font-size:11px; font-weight:500; color:var(--text-muted); background:var(--bg); border:1px solid var(--border); padding:1px 6px; border-radius:4px; margin-left:6px; }
+.ac-help     { font-size:12px; color:var(--text-muted); line-height:1.5; }
+.ac-input    {
+  width:100%; padding:10px 12px; border:1px solid var(--border);
+  border-radius:var(--radius); font-size:15px; outline:none;
+  font-family:inherit; transition:border-color .15s, box-shadow .15s;
+}
+.ac-input:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(234,88,12,.12); }
+textarea.ac-input { resize:vertical; }
+
+/* Prefix/suffix inputs */
+.ac-prefix-wrap, .ac-suffix-wrap { display:flex; }
+.ac-prefix { background:var(--bg); border:1px solid var(--border); border-right:none; border-radius:var(--radius) 0 0 var(--radius); padding:10px 12px; font-size:15px; font-weight:600; color:var(--text-muted); display:flex; align-items:center; }
+.ac-suffix { background:var(--bg); border:1px solid var(--border); border-left:none; border-radius:0 var(--radius) var(--radius) 0; padding:10px 12px; font-size:14px; color:var(--text-muted); display:flex; align-items:center; }
+.ac-prefix-input { border-radius:0 var(--radius) var(--radius) 0 !important; }
+.ac-suffix-input { border-radius:var(--radius) 0 0 var(--radius) !important; flex:1; }
+
+/* Duration chips */
+.ac-duration-chips { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px; }
+.ac-duration-label { font-size:12px; color:var(--text-muted); }
+.ac-chip { padding:5px 14px; border:1px solid var(--border); border-radius:999px; background:white; font-size:12px; font-weight:600; cursor:pointer; transition:all .15s; }
+.ac-chip:hover { background:var(--primary); color:white; border-color:var(--primary); }
+
+/* ── Submit row ── */
+.ac-submit-row { display:flex; align-items:center; gap:16px; margin-top:8px; }
+.ac-submit-btn {
+  background:var(--primary); color:white; border:none;
+  padding:14px 36px; border-radius:var(--radius);
+  font-size:16px; font-weight:700; cursor:pointer;
+  box-shadow:0 4px 14px rgba(234,88,12,.35);
+  transition:background .15s, transform .12s;
+}
+.ac-submit-btn:hover { background:var(--primary-dark); transform:translateY(-1px); }
+.ac-cancel-link { color:var(--text-muted); text-decoration:none; font-size:14px; }
+.ac-cancel-link:hover { color:var(--text); }
+
+/* ── Photo upload zones ── */
+.ac-photos-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.ac-photo-zone  {}
+.ac-photo-label { font-size:13px; font-weight:600; margin-bottom:8px; color:var(--text); }
+.ac-upload-sm   { min-height:180px; }
+.ac-upload-placeholder--sm { padding:20px 12px; }
+.ac-gallery-thumbs { display:flex; flex-wrap:wrap; gap:6px; padding:10px; }
+.ac-gallery-thumbs img { width:60px; height:60px; object-fit:cover; border-radius:6px; border:1px solid var(--border); }
+.ac-gallery-count { font-size:12px; color:var(--text-muted); padding:8px 10px; }
+
+/* ── Responsive ── */
+@media (max-width:640px) {
+  .ac-photos-grid { grid-template-columns:1fr; }
+  .ac-card { padding:18px 16px; }
+  .ac-mode-row { grid-template-columns:1fr; }
+  .ac-two-col { grid-template-columns:1fr; }
+  .ac-steps-row { display:none; }
+  .ac-pigeon-grid { grid-template-columns:1fr; }
+}
+</style>
+
+<script>
+// ── Default times (start now+5m, end now+24h) ──────────────────────────────
+(function() {
+  const pad  = n => String(n).padStart(2,'0');
+  const fmt  = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const now  = new Date();
+  const st   = new Date(now.getTime() + 5 * 60000);
+  const et   = new Date(now.getTime() + 24 * 3600000);
+  document.getElementById('start-time').value = fmt(st);
+  document.getElementById('end-time').value   = fmt(et);
+})();
+
+// ── Duration quick-set ─────────────────────────────────────────────────────
+function setDuration(hours) {
+  const stEl = document.getElementById('start-time');
+  const etEl = document.getElementById('end-time');
+  if (!stEl.value) return;
+  const st = new Date(stEl.value);
+  const et = new Date(st.getTime() + hours * 3600000);
+  const pad = n => String(n).padStart(2,'0');
+  const fmt = d => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  etEl.value = fmt(et);
+  // Flash chip
+  event.target.style.background = 'var(--primary)';
+  event.target.style.color      = 'white';
+  setTimeout(() => { event.target.style.background = ''; event.target.style.color = ''; }, 800);
+}
+
+// ── Mode switch ────────────────────────────────────────────────────────────
+function switchMode(mode) {
+  const isPigeon = mode === 'pigeon';
+  document.getElementById('pigeon-section').style.display = isPigeon ? 'block' : 'none';
+  document.getElementById('image-section').style.display  = isPigeon ? 'none'  : 'block';
+  document.getElementById('opt-pigeon').classList.toggle('ac-mode-opt--active', isPigeon);
+  document.getElementById('opt-image').classList.toggle('ac-mode-opt--active',  !isPigeon);
+  const pidField = document.getElementById('pigeon-id');
+  if (pidField) pidField.disabled = !isPigeon;
+  updateStepIndicator(1, true);
+}
+
+// ── Pigeon selection ───────────────────────────────────────────────────────
+function selectPigeon(pk, name, breed) {
+  document.getElementById('pigeon-id').value = pk;
+  document.querySelectorAll('.ac-pigeon-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('pig-' + pk).classList.add('selected');
+  // Hint
+  const hint = document.getElementById('pigeon-hint');
+  if (hint) {
+    hint.style.display = 'flex';
+    document.getElementById('pigeon-hint-name').textContent = name;
+  }
+  // Auto-fill title
+  const tf = document.getElementById('auc-title');
+  if (!tf.value || tf.dataset.auto === '1') {
+    tf.value = name + ' — ' + breed + ' Auction';
+    tf.dataset.auto = '1';
+  }
+  updateStepIndicator(1, true);
+}
+document.getElementById('auc-title')?.addEventListener('input', function() {
+  this.dataset.auto = '0';
+});
+
+// ── Image helpers ──────────────────────────────────────────────────────────
+function previewMain(input) {
+  // used only in standalone "image" mode top upload box (legacy path)
+  previewZone(input, 'main-preview', 'main-upload-box');
+  updateStepIndicator(1, true);
+}
+
+function previewZone(input, previewId, boxId) {
+  const f = input.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    // Hide placeholder in the same box
+    const box = document.getElementById(boxId);
+    box.querySelectorAll('.ac-upload-placeholder').forEach(el => el.style.display = 'none');
+    const preview = document.getElementById(previewId);
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+  };
+  reader.readAsDataURL(f);
+  updateStepIndicator(1, true);
+}
+
+function handleGallery(input) {
+  const files = Array.from(input.files).slice(0, 10);
+  const thumbs = document.getElementById('gallery-thumbs');
+  const placeholder = document.getElementById('gallery-placeholder');
+  thumbs.innerHTML = '';
+  if (files.length === 0) {
+    placeholder.style.display = 'flex';
+    thumbs.style.display = 'none';
+    return;
+  }
+  placeholder.style.display = 'none';
+  thumbs.style.display = 'flex';
+  files.forEach(f => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      thumbs.appendChild(img);
+    };
+    reader.readAsDataURL(f);
+  });
+  const countEl = document.createElement('div');
+  countEl.className = 'ac-gallery-count';
+  countEl.textContent = `${files.length} photo${files.length > 1 ? 's' : ''} selected`;
+  thumbs.appendChild(countEl);
+  updateStepIndicator(1, true);
+}
+
+// ── Step indicator feedback ────────────────────────────────────────────────
+function updateStepIndicator(step, done) {
+  const el = document.getElementById('si-' + step);
+  if (el) el.classList.toggle('ac-step--done', done);
+}
+// Mark steps done as user fills them
+['auc-title','start-time','end-time'].forEach((id, i) => {
+  document.getElementById(id)?.addEventListener('input', () => updateStepIndicator(i === 0 ? 2 : 4, true));
+});
+document.querySelectorAll('[name=starting_price]')[0]?.addEventListener('input', () => updateStepIndicator(3, true));
+</script>
+{% endblock %}

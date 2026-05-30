@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% block title %}{{ contest.title }} — BPH{% endblock %}
+{% block content %}
+<div class="container" style="padding:36px 16px 80px;">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:24px;">
+    <div>
+      <h1 style="font-size:24px;font-weight:800;margin-bottom:6px;">🏆 {{ contest.title }}</h1>
+      <p style="color:var(--text-muted);">{{ contest.description }}</p>
+    </div>
+    <div style="text-align:right;font-size:13px;color:var(--text-muted);">
+      <div>Entry period ends: <strong>{{ contest.end_date|date:"d M Y" }}</strong></div>
+      <div>Voting ends: <strong>{{ contest.voting_end_date|date:"d M Y" }}</strong></div>
+      {% if can_enter and not user_entry %}
+        <a href="/contests/{{ contest.pk }}/enter/" class="btn-primary" style="margin-top:10px;display:inline-block;">📸 Submit Entry</a>
+      {% elif user_entry %}
+        <div style="margin-top:10px;background:#d1fae5;color:#065f46;padding:6px 14px;border-radius:8px;font-size:12px;font-weight:700;">✅ You've entered!</div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if entries_with_counts %}
+  <div class="contest-entries-grid">
+    {% for entry,votes in entries_with_counts %}
+    <div class="ce-card {% if contest.winner and contest.winner.pk == entry.pk %}ce-winner{% endif %}">
+      {% if contest.winner and contest.winner.pk == entry.pk %}
+        <div class="ce-winner-badge">🏆 Winner</div>
+      {% endif %}
+      <div class="ce-img-wrap"><img src="{{ entry.image.url }}" alt="" class="ce-img"></div>
+      <div class="ce-body">
+        <div class="ce-votes">❤️ {{ votes }} votes</div>
+        {% if entry.caption %}<div class="ce-caption">{{ entry.caption }}</div>{% endif %}
+        <div class="ce-user">by <a href="/users/{{ entry.user.username }}/">{{ entry.user.username }}</a>
+          {% if entry.pigeon %} · 🐦 {{ entry.pigeon.name }}{% endif %}
+        </div>
+        {% if can_vote and not user_vote %}
+        <button class="vote-btn" onclick="castVote({{ contest.pk }}, {{ entry.pk }}, this)">Vote for this</button>
+        {% elif user_vote and user_vote.entry.pk == entry.pk %}
+        <div style="color:var(--primary);font-weight:700;font-size:13px;margin-top:6px;">✓ You voted for this</div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px;background:white;border-radius:12px;border:2px dashed var(--border);">
+    <div style="font-size:48px;margin-bottom:12px;">📸</div>
+    <p style="color:var(--text-muted);">No entries yet. Be the first to submit!</p>
+    {% if can_enter %}<a href="/contests/{{ contest.pk }}/enter/" class="btn-primary" style="margin-top:16px;display:inline-block;">Submit Entry</a>{% endif %}
+  </div>
+  {% endif %}
+</div>
+<style>
+.contest-entries-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px; }
+.ce-card { background:white;border:1px solid var(--border);border-radius:12px;overflow:hidden;position:relative; }
+.ce-winner { border-color:#f59e0b;border-width:2px;box-shadow:0 0 0 2px #fef3c7; }
+.ce-winner-badge { position:absolute;top:10px;left:10px;background:#f59e0b;color:#111;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:700; }
+.ce-img-wrap { height:220px;overflow:hidden; }
+.ce-img { width:100%;height:100%;object-fit:cover; }
+.ce-body { padding:12px; }
+.ce-votes { font-size:16px;font-weight:700;color:#ef4444;margin-bottom:4px; }
+.ce-caption { font-size:13px;color:var(--text-muted);margin-bottom:4px; }
+.ce-user { font-size:12px;color:var(--text-muted); }
+.ce-user a { color:var(--primary); }
+.vote-btn { margin-top:8px;background:var(--primary);color:white;border:none;padding:7px 16px;border-radius:8px;font-weight:700;cursor:pointer;font-size:13px;width:100%; }
+.vote-btn:hover { background:var(--primary-dark); }
+</style>
+<script>
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1]||'';
+async function castVote(contestId, entryId, btn) {
+  const fd = new FormData(); fd.append('entry_id', entryId);
+  const res = await fetch(`/contests/${contestId}/vote/`, {method:'POST', headers:{'X-CSRFToken':CSRF}, body:fd});
+  const d = await res.json();
+  if (d.error) { alert(d.error); return; }
+  btn.closest('.ce-body').querySelector('.ce-votes').textContent = `❤️ ${d.vote_count} votes`;
+  btn.replaceWith(Object.assign(document.createElement('div'), {style:'color:var(--primary);font-weight:700;font-size:13px;margin-top:6px;', textContent:'✓ You voted for this'}));
+  document.querySelectorAll('.vote-btn').forEach(b => b.remove());
+}
+</script>
+{% endblock %}

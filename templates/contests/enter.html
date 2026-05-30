@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}Enter Contest — BPH{% endblock %}
+{% block content %}
+<div class="container" style="max-width:540px;padding:40px 16px 80px;">
+  <h1 style="font-size:22px;font-weight:800;margin-bottom:4px;">📸 Submit Your Entry</h1>
+  <p style="color:var(--text-muted);margin-bottom:24px;">{{ contest.title }}</p>
+  <div class="card" style="padding:28px;">
+    <form method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Pigeon Photo <span style="color:#ef4444;">*</span></label>
+        <div class="upload-box" onclick="document.getElementById('entry-img').click()" style="cursor:pointer;">
+          <input type="file" name="image" id="entry-img" accept="image/*" required style="display:none;" onchange="previewEntry(this)">
+          <div class="upload-inner" id="entry-upload-inner">
+            <div class="upload-icon">📸</div>
+            <div class="upload-label">Click to upload your best pigeon photo</div>
+          </div>
+          <img id="entry-preview" src="" alt="" style="display:none;width:100%;border-radius:8px;max-height:300px;object-fit:cover;">
+        </div>
+      </div>
+      {% if user_pigeons %}
+      <div class="form-group">
+        <label>Tag a Pigeon (optional)</label>
+        <select name="pigeon_id">
+          <option value="">— None —</option>
+          {% for pig in user_pigeons %}<option value="{{ pig.pk }}">{{ pig.name }}</option>{% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="form-group">
+        <label>Caption (optional)</label>
+        <textarea name="caption" rows="2" placeholder="Tell us about your pigeon..."></textarea>
+      </div>
+      <button type="submit" class="btn-primary" style="width:100%;padding:13px;font-size:15px;">Submit Entry 🚀</button>
+    </form>
+  </div>
+</div>
+<script>
+function previewEntry(input) {
+  const f = input.files[0]; if (!f) return;
+  const r = new FileReader(); r.onload = e => {
+    document.getElementById('entry-upload-inner').style.display = 'none';
+    const img = document.getElementById('entry-preview');
+    img.src = e.target.result; img.style.display = 'block';
+  }; r.readAsDataURL(f);
+}
+</script>
+{% endblock %}

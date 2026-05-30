@@ -5,6 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}BD Pigeon Hub{% endblock %}</title>
   {% load static %}
+  <link rel="icon" type="image/jpeg" href="{% static 'images/logo.jpg' %}">
+  <link rel="shortcut icon" href="{% static 'images/logo.jpg' %}">
+  <link rel="apple-touch-icon" href="{% static 'images/logo.jpg' %}">
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  <meta name="theme-color" content="#ea580c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <!-- Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-JWLWY95P07"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-JWLWY95P07');
+  </script>
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
   {% block extra_css %}{% endblock %}
 </head>
@@ -13,7 +29,10 @@
   <!-- Top Navigation -->
   <nav class="navbar">
     <div class="container nav-inner">
-      <a href="/" class="logo">🐦 BD Pigeon Hub</a>
+      <a href="/" class="logo">
+        <img src="{% static 'images/logo.jpg' %}" alt="BD Pigeon Hub" class="logo-img">
+        <span class="logo-text">BD Pigeon Hub</span>
+      </a>
 
       <div class="nav-search">
         <form action="/marketplace/" method="get">
@@ -24,10 +43,16 @@
 
       <div class="nav-links">
         <a href="/marketplace/">Browse</a>
-        <a href="/pedigree/">Pedigree</a>
-        <a href="/feed/">Feed Guide</a>
+        <a href="/auctions/">Auctions</a>
+        <a href="/wall/">Wall</a>
+        <a href="/contests/">Contests</a>
         {% if user.is_authenticated %}
           <a href="/marketplace/add/" class="btn-primary">+ List Pigeon</a>
+          <!-- Notification bell -->
+          <a href="/notifications/" class="nav-bell" title="Notifications">
+            🔔
+            {% if notification_count %}<span class="nav-bell-badge" id="notif-badge">{{ notification_count }}</span>{% endif %}
+          </a>
           <div class="nav-user">
             <a href="/dashboard/">
               {% if user.avatar %}
@@ -42,6 +67,9 @@
               <a href="/messages/">Messages
                 {% if unread_count %}<span class="badge">{{ unread_count }}</span>{% endif %}
               </a>
+              <a href="/offers/">My Offers</a>
+              <a href="/auctions/mine/">My Auctions</a>
+              <a href="/users/{{ user.username }}/">My Profile</a>
               <a href="/auth/logout/">Logout</a>
             </div>
           </div>
@@ -49,6 +77,8 @@
           <a href="/auth/login/" class="btn-outline">Login</a>
           <a href="/auth/register/" class="btn-primary">Join Free</a>
         {% endif %}
+        <!-- Language toggle -->
+        <button class="lang-toggle" onclick="toggleLang()" id="lang-btn" title="Switch language">EN</button>
       </div>
 
       <button class="hamburger" onclick="toggleMobileNav()">☰</button>
@@ -58,6 +88,7 @@
   <!-- Mobile Nav -->
   <div class="mobile-nav" id="mobileNav">
     <a href="/marketplace/">Browse Listings</a>
+    <a href="/wall/">Pigeon Wall</a>
     <a href="/pedigree/">Pedigree</a>
     <a href="/feed/">Feed Guide</a>
     {% if user.is_authenticated %}
@@ -99,12 +130,18 @@
         <div>
           <h4>Explore</h4>
           <a href="/marketplace/">Marketplace</a>
+          <a href="/auctions/">Auctions</a>
+          <a href="/wall/">Pigeon Wall</a>
+          <a href="/contests/">Photo Contests</a>
+          <a href="/marketplace/insights/">Market Insights</a>
           <a href="/pedigree/">Pedigrees</a>
-          <a href="/feed/">Feed Generator</a>
+          <a href="/feed/">Feed Guide</a>
         </div>
         <div>
           <h4>Account</h4>
           <a href="/dashboard/">Dashboard</a>
+          <a href="/offers/">My Offers</a>
+          <a href="/notifications/">Notifications</a>
           <a href="/auth/login/">Login</a>
           <a href="/auth/register/">Register</a>
         </div>
@@ -114,6 +151,15 @@
   </footer>
 
   <script src="{% static 'js/main.js' %}"></script>
+  <script src="{% static 'js/lang.js' %}"></script>
   {% block extra_js %}{% endblock %}
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () =>
+        navigator.serviceWorker.register('/static/js/sw.js', {scope: '/'})
+          .catch(() => {}) // silently fail in dev
+      );
+    }
+  </script>
 </body>
 </html>

@@ -1,0 +1,883 @@
+{% extends 'base.html' %}
+{% block title %}Pigeon Wall — BPH{% endblock %}
+{% block content %}
+
+<div class="wall-page">
+  <div class="wall-layout">
+
+    <!-- ── Left Sidebar ── -->
+    <aside class="wall-sidebar">
+      <div class="ws-card">
+        {% if user.is_authenticated %}
+          <div class="ws-user">
+            {% if user.avatar %}
+              <img src="{{ user.avatar.url }}" class="ws-avatar" alt="">
+            {% else %}
+              <div class="ws-avatar ws-avatar-placeholder">{{ user.username|first|upper }}</div>
+            {% endif %}
+            <div>
+              <div class="ws-username">{{ user.username }}</div>
+              <div class="ws-sublabel">Pigeon Enthusiast</div>
+            </div>
+          </div>
+          <div class="ws-divider"></div>
+        {% endif %}
+        <nav class="ws-nav">
+          <a href="/wall/" class="ws-nav-link ws-nav-link--active">🐦 Pigeon Wall</a>
+          <a href="/marketplace/" class="ws-nav-link">🛒 Marketplace</a>
+          {% if user.is_authenticated %}
+          <a href="/dashboard/pigeons/" class="ws-nav-link">📋 My Pigeons</a>
+          <a href="/marketplace/add/" class="ws-nav-link">➕ List a Pigeon</a>
+          {% endif %}
+          <a href="/pedigree/" class="ws-nav-link">🌳 Pedigrees</a>
+        </nav>
+      </div>
+
+      <!-- Trending breeds hint -->
+      <div class="ws-card ws-tips">
+        <div class="ws-tip-title">🏆 Show Off Your Flock</div>
+        <p>Share photos of your best pigeons, racing achievements, pedigrees, and anything pigeon-related!</p>
+      </div>
+    </aside>
+
+    <!-- ── Main Feed ── -->
+    <main class="wall-main">
+
+      <!-- Create Post Box -->
+      {% if user.is_authenticated %}
+      <div class="post-composer" id="composer">
+        <div class="composer-top">
+          {% if user.avatar %}
+            <img src="{{ user.avatar.url }}" class="composer-avatar" alt="">
+          {% else %}
+            <div class="composer-avatar composer-avatar-ph">{{ user.username|first|upper }}</div>
+          {% endif %}
+          <div class="composer-input-wrap" onclick="expandComposer()">
+            <span class="composer-placeholder">What's happening with your pigeons, {{ user.username }}?</span>
+          </div>
+        </div>
+
+        <!-- Expanded composer (hidden until clicked) -->
+        <div class="composer-expanded" id="composer-expanded" style="display:none;">
+          <form id="post-form" enctype="multipart/form-data">
+            {% csrf_token %}
+            <textarea name="content" id="post-content" rows="3"
+                      placeholder="Share your pigeon's story, achievement, or a beautiful photo..."
+                      class="composer-textarea" autofocus></textarea>
+
+            <!-- Image previews -->
+            <div class="composer-img-previews" id="img-previews"></div>
+
+            <!-- Pigeon tag -->
+            <div class="composer-pigeon-row" id="pigeon-tag-row" style="display:none;">
+              <span class="pigeon-tag-label">🐦 Tagging:</span>
+              <span id="pigeon-tag-name" class="pigeon-tag-chip"></span>
+              <button type="button" class="pigeon-tag-remove" onclick="clearPigeonTag()">×</button>
+              <input type="hidden" name="pigeon_id" id="pigeon-id-hidden">
+            </div>
+
+            <div class="composer-actions">
+              <div class="composer-tools">
+                <!-- Image upload -->
+                <label class="composer-tool" title="Add photos">
+                  <input type="file" name="images" id="img-upload" multiple accept="image/*"
+                         style="display:none;" onchange="handleImageSelect(this)">
+                  <span>📷 Photo</span>
+                </label>
+
+                <!-- Tag pigeon -->
+                {% if user_pigeons %}
+                <div class="composer-tool pigeon-dropdown-wrap">
+                  <button type="button" class="composer-tool-btn" onclick="togglePigeonPicker()">
+                    🐦 Tag Pigeon
+                  </button>
+                  <div class="pigeon-picker-dropdown" id="pigeon-picker" style="display:none;">
+                    {% for pig in user_pigeons %}
+                    <div class="ppd-item" onclick="tagPigeon('{{ pig.pk }}','{{ pig.name|escapejs }}')">
+                      {% with img=pig.primary_image %}
+                        {% if img %}
+                          <img src="{{ img.image.url }}" class="ppd-img" alt="">
+                        {% else %}
+                          <span class="ppd-emoji">🐦</span>
+                        {% endif %}
+                      {% endwith %}
+                      <div>
+                        <div class="ppd-name">{{ pig.name }}</div>
+                        <div class="ppd-breed">{% if pig.breed %}{{ pig.breed.name }}{% else %}Unknown{% endif %}</div>
+                      </div>
+                    </div>
+                    {% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+              </div>
+
+              <div style="display:flex;gap:8px;align-items:center;">
+                <button type="button" class="composer-cancel" onclick="collapseComposer()">Cancel</button>
+                <button type="submit" class="composer-post-btn" id="post-btn">Post</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <div class="wall-login-prompt">
+        <span>🐦 Join the Pigeon Wall!</span>
+        <a href="/auth/login/" class="btn-primary" style="padding:8px 20px;">Login to Post</a>
+        <a href="/auth/register/" class="btn-outline" style="padding:8px 20px;">Join Free</a>
+      </div>
+      {% endif %}
+
+      <!-- ── Post Feed ── -->
+      <div id="feed">
+        {% if posts %}
+          {% for post in posts %}
+            <article class="post-card" id="post-{{ post.pk }}">
+
+              <!-- Post Header -->
+              <div class="post-header">
+                <div class="post-author">
+                  {% if post.author.avatar %}
+                    <img src="{{ post.author.avatar.url }}" class="post-avatar" alt="">
+                  {% else %}
+                    <div class="post-avatar post-avatar-ph">{{ post.author.username|first|upper }}</div>
+                  {% endif %}
+                  <div>
+                    <div class="post-username">{{ post.author.username }}</div>
+                    <div class="post-time">{{ post.created_at|timesince }} ago</div>
+                  </div>
+                </div>
+                {% if user.is_authenticated and post.author == user %}
+                <button class="post-delete-btn" onclick="deletePost({{ post.pk }})" title="Delete post">×</button>
+                {% endif %}
+              </div>
+
+              <!-- Post Body -->
+              <div class="post-content">{{ post.content|linebreaksbr }}</div>
+
+              <!-- Pigeon Tag -->
+              {% if post.pigeon %}
+              <a href="/pigeons/{{ post.pigeon.pk }}/" class="post-pigeon-tag">
+                {% with img=post.pigeon.primary_image %}
+                  {% if img %}
+                    <img src="{{ img.image.url }}" class="ppt-img" alt="">
+                  {% else %}
+                    <span style="font-size:22px;">🐦</span>
+                  {% endif %}
+                {% endwith %}
+                <div class="ppt-info">
+                  <div class="ppt-label">Tagged Pigeon</div>
+                  <div class="ppt-name">{{ post.pigeon.name }}
+                    {% if post.pigeon.breed %}
+                      <span class="ppt-breed">· {{ post.pigeon.breed.name }}</span>
+                    {% endif %}
+                  </div>
+                </div>
+                <span class="ppt-arrow">→</span>
+              </a>
+              {% endif %}
+
+              <!-- Post Images -->
+              {% with imgs=post.images.all %}
+              {% if imgs %}
+              <div class="post-images post-images--{{ imgs|length }}">
+                {% for img in imgs %}
+                  <div class="pi-wrap" onclick="openLightbox('{{ img.image.url }}')">
+                    <img src="{{ img.image.url }}" alt="post image" loading="lazy">
+                    {% if forloop.counter == 4 and imgs|length > 4 %}
+                      <div class="pi-more">+{{ imgs|length|add:"-3" }}</div>
+                    {% endif %}
+                  </div>
+                {% endfor %}
+              </div>
+              {% endif %}
+              {% endwith %}
+
+              <!-- Like / Comment bar -->
+              <div class="post-stats" id="stats-{{ post.pk }}">
+                <span class="stat-likes">
+                  ❤️ <span id="like-count-{{ post.pk }}">{{ post.like_count }}</span>
+                  {% if post.like_count == 1 %}like{% else %}likes{% endif %}
+                </span>
+                <button class="stat-comments-btn" onclick="toggleComments({{ post.pk }})">
+                  <span id="comment-count-{{ post.pk }}">{{ post.comment_count }}</span> comment{% if post.comment_count != 1 %}s{% endif %}
+                </button>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="post-actions">
+                {% if user.is_authenticated %}
+                <button class="pa-btn pa-like {% if post.pk in liked_post_ids %}pa-liked{% endif %}"
+                        id="like-btn-{{ post.pk }}"
+                        onclick="toggleLike({{ post.pk }})">
+                  <span class="pa-icon">{% if post.pk in liked_post_ids %}❤️{% else %}🤍{% endif %}</span>
+                  <span>Like</span>
+                </button>
+                {% else %}
+                <a href="/auth/login/" class="pa-btn">🤍 Like</a>
+                {% endif %}
+
+                <button class="pa-btn" onclick="toggleComments({{ post.pk }})">
+                  💬 Comment
+                </button>
+
+                <button class="pa-btn" onclick="sharePost({{ post.pk }}, '{{ post.content|truncatechars:60|escapejs }}')">
+                  🔗 Share
+                </button>
+              </div>
+
+              <!-- Comments Section -->
+              <div class="comments-section" id="comments-{{ post.pk }}" style="display:none;">
+                <div class="comments-list" id="comments-list-{{ post.pk }}">
+                  {% for comment in post.comments.all %}
+                  <div class="comment" id="comment-{{ comment.pk }}">
+                    {% if comment.author.avatar %}
+                      <img src="{{ comment.author.avatar.url }}" class="comment-avatar" alt="">
+                    {% else %}
+                      <div class="comment-avatar comment-avatar-ph">{{ comment.author.username|first|upper }}</div>
+                    {% endif %}
+                    <div class="comment-bubble">
+                      <div class="comment-author">{{ comment.author.username }}</div>
+                      <div class="comment-text">{{ comment.content|linebreaksbr }}</div>
+                      <div class="comment-time">{{ comment.created_at|timesince }} ago</div>
+                    </div>
+                    {% if user.is_authenticated and comment.author == user %}
+                    <button class="comment-delete" onclick="deleteComment({{ comment.pk }}, {{ post.pk }})" title="Delete">×</button>
+                    {% endif %}
+                  </div>
+                  {% endfor %}
+                </div>
+
+                {% if user.is_authenticated %}
+                <div class="comment-composer">
+                  {% if user.avatar %}
+                    <img src="{{ user.avatar.url }}" class="comment-avatar" alt="">
+                  {% else %}
+                    <div class="comment-avatar comment-avatar-ph">{{ user.username|first|upper }}</div>
+                  {% endif %}
+                  <div class="comment-input-wrap">
+                    <input type="text" class="comment-input" id="comment-input-{{ post.pk }}"
+                           placeholder="Write a comment..."
+                           onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();submitComment({{ post.pk }})}">
+                    <button class="comment-send" onclick="submitComment({{ post.pk }})">Send</button>
+                  </div>
+                </div>
+                {% else %}
+                <div style="text-align:center;padding:12px;font-size:13px;color:var(--text-muted);">
+                  <a href="/auth/login/" style="color:var(--primary);">Login</a> to comment
+                </div>
+                {% endif %}
+              </div>
+
+            </article>
+          {% endfor %}
+        {% else %}
+          <div class="wall-empty">
+            <div style="font-size:64px;margin-bottom:16px;">🐦</div>
+            <h2>The Wall is Empty!</h2>
+            <p>Be the first to show off your pigeons. Share a photo, an achievement, or just say hello!</p>
+            {% if user.is_authenticated %}
+              <button class="btn-primary" style="margin-top:20px;padding:12px 28px;" onclick="expandComposer()">
+                Create First Post
+              </button>
+            {% else %}
+              <a href="/auth/register/" class="btn-primary" style="margin-top:20px;padding:12px 28px;display:inline-block;">
+                Join &amp; Post
+              </a>
+            {% endif %}
+          </div>
+        {% endif %}
+      </div>
+
+    </main>
+
+    <!-- ── Right Sidebar ── -->
+    <aside class="wall-right-sidebar">
+      <div class="ws-card">
+        <div class="wrs-title">📣 Community Tips</div>
+        <ul class="wrs-tips-list">
+          <li>📸 Post clear photos in good lighting</li>
+          <li>🏅 Share race results & achievements</li>
+          <li>🌳 Show pedigree trees of champions</li>
+          <li>💬 Engage with other enthusiasts</li>
+          <li>🐣 Document your chicks growing up</li>
+        </ul>
+      </div>
+      <div class="ws-card wrs-cta">
+        <div style="font-size:36px;margin-bottom:8px;">🛒</div>
+        <div class="wrs-title" style="margin-bottom:6px;">Have Pigeons to Sell?</div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:14px;">
+          List them on the marketplace — free, no commission!
+        </p>
+        <a href="/marketplace/add/" class="btn-primary" style="display:block;text-align:center;padding:10px;">
+          List a Pigeon
+        </a>
+      </div>
+    </aside>
+
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">×</button>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<style>
+/* ── Wall Layout ── */
+.wall-page { background: #f0f2f5; min-height: 100vh; padding: 24px 0 60px; }
+.wall-layout {
+  max-width: 1100px; margin: 0 auto; padding: 0 16px;
+  display: grid; grid-template-columns: 240px 1fr 240px; gap: 20px;
+  align-items: start;
+}
+
+/* ── Sidebar ── */
+.wall-sidebar, .wall-right-sidebar { position: sticky; top: 80px; }
+.ws-card {
+  background: white; border-radius: 12px; padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 14px;
+}
+.ws-user { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.ws-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.ws-avatar-placeholder {
+  width: 44px; height: 44px; border-radius: 50%;
+  background: var(--primary); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 18px;
+}
+.ws-username { font-weight: 700; font-size: 14px; }
+.ws-sublabel { font-size: 12px; color: var(--text-muted); }
+.ws-divider { height: 1px; background: var(--border); margin: 10px 0; }
+.ws-nav { display: flex; flex-direction: column; gap: 2px; }
+.ws-nav-link {
+  padding: 9px 10px; border-radius: 8px; text-decoration: none;
+  color: var(--text); font-size: 14px; font-weight: 500;
+  transition: background .12s;
+}
+.ws-nav-link:hover { background: #f0f2f5; }
+.ws-nav-link--active { background: #fff7ed; color: var(--primary); }
+.ws-tips p { font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 0; }
+.ws-tip-title { font-weight: 700; font-size: 14px; margin-bottom: 6px; }
+
+/* Right sidebar */
+.wrs-title { font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+.wrs-tips-list { list-style: none; display: flex; flex-direction: column; gap: 7px; }
+.wrs-tips-list li { font-size: 13px; color: var(--text-muted); }
+.wrs-cta { text-align: center; }
+
+/* ── Post Composer ── */
+.post-composer {
+  background: white; border-radius: 12px; padding: 16px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 16px;
+}
+.composer-top { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+.composer-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.composer-avatar-ph {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--primary); color: white; display: flex;
+  align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;
+}
+.composer-input-wrap {
+  flex: 1; background: #f0f2f5; border-radius: 999px;
+  padding: 10px 16px; color: var(--text-muted); font-size: 15px;
+  user-select: none;
+}
+.composer-placeholder { pointer-events: none; }
+.composer-textarea {
+  width: 100%; border: none; outline: none; resize: none;
+  font-size: 16px; font-family: inherit; line-height: 1.5;
+  padding: 0; margin: 12px 0 8px; color: var(--text);
+  background: transparent;
+}
+.composer-img-previews {
+  display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px;
+}
+.cip-thumb {
+  width: 80px; height: 80px; object-fit: cover; border-radius: 8px;
+  position: relative;
+}
+.cip-wrap { position: relative; }
+.cip-rm { position: absolute; top: -4px; right: -4px;
+           background: #ef4444; color: white; border: none;
+           border-radius: 50%; width: 18px; height: 18px;
+           font-size: 11px; cursor: pointer; display: flex;
+           align-items: center; justify-content: center; }
+.composer-pigeon-row {
+  display: flex; align-items: center; gap: 8px;
+  background: #fff7ed; border-radius: 8px; padding: 8px 12px;
+  margin-bottom: 8px; font-size: 13px;
+}
+.pigeon-tag-label { color: var(--primary); font-weight: 600; }
+.pigeon-tag-chip { background: var(--primary); color: white;
+                   padding: 2px 10px; border-radius: 999px; font-size: 12px; }
+.pigeon-tag-remove { background: none; border: none; cursor: pointer;
+                     color: #ef4444; font-size: 16px; font-weight: 700; }
+.composer-actions {
+  display: flex; justify-content: space-between; align-items: center;
+  border-top: 1px solid var(--border); padding-top: 10px; margin-top: 4px;
+}
+.composer-tools { display: flex; align-items: center; gap: 4px; }
+.composer-tool { display: flex; align-items: center; padding: 7px 12px;
+                 border-radius: 8px; font-size: 13px; font-weight: 500;
+                 color: var(--text-muted); cursor: pointer; transition: background .12s; }
+.composer-tool:hover { background: #f0f2f5; }
+.composer-tool-btn { background: none; border: none; cursor: pointer;
+                     font-size: 13px; font-weight: 500; color: var(--text-muted);
+                     padding: 0; }
+.pigeon-dropdown-wrap { position: relative; padding: 7px 12px; border-radius: 8px;
+                         transition: background .12s; }
+.pigeon-dropdown-wrap:hover { background: #f0f2f5; }
+.pigeon-picker-dropdown {
+  position: absolute; bottom: calc(100% + 6px); left: 0;
+  background: white; border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.12); min-width: 220px; z-index: 50;
+  max-height: 220px; overflow-y: auto;
+}
+.ppd-item { display: flex; align-items: center; gap: 10px;
+            padding: 10px 14px; cursor: pointer; transition: background .12s; }
+.ppd-item:hover { background: #f0f2f5; }
+.ppd-img { width: 36px; height: 36px; border-radius: 6px; object-fit: cover; }
+.ppd-emoji { font-size: 28px; }
+.ppd-name { font-weight: 600; font-size: 13px; }
+.ppd-breed { font-size: 12px; color: var(--text-muted); }
+.composer-cancel { background: none; border: none; cursor: pointer;
+                   color: var(--text-muted); font-size: 14px; padding: 8px 14px;
+                   border-radius: 8px; }
+.composer-cancel:hover { background: #f0f2f5; }
+.composer-post-btn {
+  background: var(--primary); color: white; border: none; cursor: pointer;
+  padding: 8px 22px; border-radius: 8px; font-size: 14px; font-weight: 700;
+  transition: background .12s;
+}
+.composer-post-btn:hover { background: var(--primary-dark); }
+.composer-post-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* Login prompt */
+.wall-login-prompt {
+  background: white; border-radius: 12px; padding: 16px 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 16px;
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  font-weight: 600;
+}
+
+/* ── Post Card ── */
+.post-card {
+  background: white; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08); margin-bottom: 16px;
+  overflow: hidden;
+}
+.post-header { display: flex; justify-content: space-between; align-items: flex-start;
+               padding: 16px 16px 0; }
+.post-author { display: flex; align-items: center; gap: 10px; }
+.post-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+.post-avatar-ph {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: var(--primary); color: white; display: flex;
+  align-items: center; justify-content: center; font-weight: 700; font-size: 16px;
+}
+.post-username { font-weight: 700; font-size: 14px; }
+.post-time { font-size: 12px; color: var(--text-muted); }
+.post-delete-btn {
+  background: none; border: none; cursor: pointer; font-size: 20px;
+  color: #9ca3af; line-height: 1; padding: 2px 6px; border-radius: 6px;
+  transition: background .12s, color .12s;
+}
+.post-delete-btn:hover { background: #fee2e2; color: #ef4444; }
+.post-content { padding: 10px 16px 12px; font-size: 15px; line-height: 1.65; color: var(--text); }
+
+/* Pigeon tag */
+.post-pigeon-tag {
+  display: flex; align-items: center; gap: 12px;
+  margin: 0 16px 12px; padding: 10px 14px;
+  background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px;
+  text-decoration: none; color: inherit; transition: background .12s;
+}
+.post-pigeon-tag:hover { background: #ffedd5; }
+.ppt-img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+.ppt-info { flex: 1; }
+.ppt-label { font-size: 11px; color: var(--primary); font-weight: 600; text-transform: uppercase; letter-spacing: .5px; }
+.ppt-name { font-size: 14px; font-weight: 700; }
+.ppt-breed { font-weight: 400; color: var(--text-muted); }
+.ppt-arrow { color: var(--primary); font-size: 18px; }
+
+/* Post Images */
+.post-images { display: grid; gap: 3px; overflow: hidden; }
+.post-images--1 { grid-template-columns: 1fr; }
+.post-images--1 .pi-wrap { max-height: 500px; }
+.post-images--2 { grid-template-columns: 1fr 1fr; }
+.post-images--2 .pi-wrap { height: 250px; }
+.post-images--3 { grid-template-columns: 1fr 1fr; }
+.post-images--3 .pi-wrap:first-child { grid-row: span 2; height: 320px; }
+.post-images--3 .pi-wrap:not(:first-child) { height: 158px; }
+.post-images--4 { grid-template-columns: 1fr 1fr; }
+.post-images--4 .pi-wrap { height: 200px; }
+.pi-wrap {
+  overflow: hidden; cursor: pointer; position: relative;
+  background: #e5e7eb;
+}
+.pi-wrap img { width: 100%; height: 100%; object-fit: cover;
+               transition: transform .3s; display: block; }
+.pi-wrap:hover img { transform: scale(1.04); }
+.pi-more {
+  position: absolute; inset: 0; background: rgba(0,0,0,.5);
+  color: white; font-size: 24px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* Post stats row */
+.post-stats {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 16px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-muted);
+}
+.stat-likes { display: flex; align-items: center; gap: 4px; }
+.stat-comments-btn { background: none; border: none; cursor: pointer;
+                     color: var(--text-muted); font-size: 13px; padding: 0; }
+.stat-comments-btn:hover { text-decoration: underline; }
+
+/* Post action buttons */
+.post-actions {
+  display: flex; border-top: 1px solid var(--border);
+}
+.pa-btn {
+  flex: 1; display: flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 10px; font-size: 14px; font-weight: 600;
+  color: var(--text-muted); background: none; border: none; cursor: pointer;
+  transition: background .12s, color .12s; text-decoration: none;
+}
+.pa-btn:hover { background: #f0f2f5; color: var(--text); }
+.pa-liked { color: #ef4444 !important; }
+.pa-icon { font-size: 16px; }
+
+/* ── Comments ── */
+.comments-section { padding: 0 16px 16px; border-top: 1px solid var(--border); }
+.comments-list { display: flex; flex-direction: column; gap: 8px; padding-top: 12px; }
+.comment { display: flex; align-items: flex-start; gap: 8px; position: relative; }
+.comment-avatar { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.comment-avatar-ph {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--primary); color: white; display: flex;
+  align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0;
+}
+.comment-bubble {
+  background: #f0f2f5; border-radius: 12px; padding: 8px 12px; flex: 1;
+}
+.comment-author { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+.comment-text { font-size: 14px; line-height: 1.5; }
+.comment-time { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+.comment-delete {
+  background: none; border: none; cursor: pointer; color: #9ca3af;
+  font-size: 16px; padding: 2px 4px; opacity: 0; transition: opacity .15s;
+  align-self: center;
+}
+.comment:hover .comment-delete { opacity: 1; }
+.comment-delete:hover { color: #ef4444; }
+.comment-composer {
+  display: flex; align-items: center; gap: 8px; margin-top: 10px;
+}
+.comment-input-wrap {
+  flex: 1; display: flex; align-items: center; gap: 0;
+  background: #f0f2f5; border-radius: 999px; overflow: hidden;
+}
+.comment-input {
+  flex: 1; border: none; background: transparent; outline: none;
+  padding: 8px 14px; font-size: 14px; font-family: inherit;
+}
+.comment-send {
+  background: none; border: none; cursor: pointer; padding: 8px 14px;
+  color: var(--primary); font-weight: 700; font-size: 13px;
+}
+.comment-send:hover { color: var(--primary-dark); }
+
+/* ── Feed empty ── */
+.wall-empty { text-align: center; padding: 60px 24px; }
+.wall-empty h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+.wall-empty p  { color: var(--text-muted); font-size: 15px; }
+
+/* ── Lightbox ── */
+.lightbox {
+  position: fixed; inset: 0; background: rgba(0,0,0,.9);
+  display: none; align-items: center; justify-content: center; z-index: 1000;
+}
+.lightbox.open { display: flex; }
+.lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 8px; }
+.lightbox-close {
+  position: absolute; top: 16px; right: 20px;
+  background: none; border: none; color: white; font-size: 36px;
+  cursor: pointer; line-height: 1;
+}
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+  .wall-layout { grid-template-columns: 1fr; }
+  .wall-sidebar, .wall-right-sidebar { position: static; display: none; }
+  .wall-layout > main { order: 1; }
+}
+</style>
+
+<script>
+const CSRF = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+
+/* ── Composer ── */
+function expandComposer() {
+  document.getElementById('composer-expanded').style.display = 'block';
+  document.getElementById('composer').querySelector('.composer-top').style.display = 'none';
+  document.getElementById('post-content').focus();
+}
+function collapseComposer() {
+  document.getElementById('composer-expanded').style.display = 'none';
+  document.getElementById('composer').querySelector('.composer-top').style.display = 'flex';
+  document.getElementById('post-content').value = '';
+  document.getElementById('img-previews').innerHTML = '';
+  clearPigeonTag();
+}
+
+/* ── Image select ── */
+let selectedFiles = [];
+function handleImageSelect(input) {
+  const previews = document.getElementById('img-previews');
+  previews.innerHTML = '';
+  selectedFiles = Array.from(input.files).slice(0, 6);
+  selectedFiles.forEach((f, i) => {
+    const url = URL.createObjectURL(f);
+    previews.insertAdjacentHTML('beforeend', `
+      <div class="cip-wrap">
+        <img src="${url}" class="cip-thumb" alt="">
+        <button type="button" class="cip-rm" onclick="removeImg(${i})">×</button>
+      </div>`);
+  });
+}
+function removeImg(i) {
+  selectedFiles.splice(i, 1);
+  const dt = new DataTransfer();
+  selectedFiles.forEach(f => dt.items.add(f));
+  document.getElementById('img-upload').files = dt.files;
+  handleImageSelect(document.getElementById('img-upload'));
+}
+
+/* ── Pigeon Tag ── */
+function togglePigeonPicker() {
+  const p = document.getElementById('pigeon-picker');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+function tagPigeon(id, name) {
+  document.getElementById('pigeon-id-hidden').value = id;
+  document.getElementById('pigeon-tag-name').textContent = name;
+  document.getElementById('pigeon-tag-row').style.display = 'flex';
+  document.getElementById('pigeon-picker').style.display = 'none';
+}
+function clearPigeonTag() {
+  document.getElementById('pigeon-id-hidden').value = '';
+  document.getElementById('pigeon-tag-row').style.display = 'none';
+}
+
+/* ── Submit Post ── */
+document.getElementById('post-form')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('post-btn');
+  btn.disabled = true;
+
+  const fd = new FormData(this);
+  // Replace file list with selected files
+  fd.delete('images');
+  selectedFiles.forEach(f => fd.append('images', f));
+
+  const res = await fetch('/wall/post/', {
+    method: 'POST',
+    headers: {'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF},
+    body: fd,
+  });
+  const data = await res.json();
+  if (data.post) {
+    prependPost(data.post);
+    collapseComposer();
+    selectedFiles = [];
+  }
+  btn.disabled = false;
+});
+
+function prependPost(p) {
+  const feed = document.getElementById('feed');
+  const empty = feed.querySelector('.wall-empty');
+  if (empty) empty.remove();
+
+  const imgs = p.images.map((img, i) => `
+    <div class="pi-wrap" onclick="openLightbox('${img.url}')">
+      <img src="${img.url}" alt="" loading="lazy">
+    </div>`).join('');
+  const imgsHtml = imgs ? `<div class="post-images post-images--${Math.min(p.images.length,4)}">${imgs}</div>` : '';
+
+  const pigeonHtml = p.pigeon ? `
+    <a href="${p.pigeon.url}" class="post-pigeon-tag">
+      ${p.pigeon.img ? `<img src="${p.pigeon.img}" class="ppt-img" alt="">` : '<span style="font-size:22px;">🐦</span>'}
+      <div class="ppt-info">
+        <div class="ppt-label">Tagged Pigeon</div>
+        <div class="ppt-name">${p.pigeon.name} <span class="ppt-breed">· ${p.pigeon.breed}</span></div>
+      </div>
+      <span class="ppt-arrow">→</span>
+    </a>` : '';
+
+  const avatarHtml = p.author.avatar
+    ? `<img src="${p.author.avatar}" class="post-avatar" alt="">`
+    : `<div class="post-avatar post-avatar-ph">${p.author.initial}</div>`;
+
+  feed.insertAdjacentHTML('afterbegin', `
+    <article class="post-card" id="post-${p.id}">
+      <div class="post-header">
+        <div class="post-author">${avatarHtml}
+          <div>
+            <div class="post-username">${p.author.username}</div>
+            <div class="post-time">${p.time_ago}</div>
+          </div>
+        </div>
+        <button class="post-delete-btn" onclick="deletePost(${p.id})">×</button>
+      </div>
+      <div class="post-content">${p.content.replace(/\n/g,'<br>')}</div>
+      ${pigeonHtml}
+      ${imgsHtml}
+      <div class="post-stats" id="stats-${p.id}">
+        <span class="stat-likes">❤️ <span id="like-count-${p.id}">0</span> likes</span>
+        <button class="stat-comments-btn" onclick="toggleComments(${p.id})">
+          <span id="comment-count-${p.id}">0</span> comments
+        </button>
+      </div>
+      <div class="post-actions">
+        <button class="pa-btn" id="like-btn-${p.id}" onclick="toggleLike(${p.id})">
+          <span class="pa-icon">🤍</span> Like
+        </button>
+        <button class="pa-btn" onclick="toggleComments(${p.id})">💬 Comment</button>
+        <button class="pa-btn" onclick="sharePost(${p.id},'${p.content.substring(0,60).replace(/'/g,"\\'")}')">🔗 Share</button>
+      </div>
+      <div class="comments-section" id="comments-${p.id}" style="display:none;">
+        <div class="comments-list" id="comments-list-${p.id}"></div>
+        <div class="comment-composer">
+          <div class="comment-avatar comment-avatar-ph">${p.author.initial}</div>
+          <div class="comment-input-wrap">
+            <input type="text" class="comment-input" id="comment-input-${p.id}"
+                   placeholder="Write a comment..."
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();submitComment(${p.id})}">
+            <button class="comment-send" onclick="submitComment(${p.id})">Send</button>
+          </div>
+        </div>
+      </div>
+    </article>`);
+}
+
+/* ── Like ── */
+async function toggleLike(postId) {
+  const res = await fetch(`/wall/post/${postId}/like/`, {
+    method: 'POST',
+    headers: {'X-CSRFToken': CSRF},
+  });
+  const data = await res.json();
+  const btn = document.getElementById(`like-btn-${postId}`);
+  const cnt = document.getElementById(`like-count-${postId}`);
+  cnt.textContent = data.like_count;
+  if (data.liked) {
+    btn.classList.add('pa-liked');
+    btn.querySelector('.pa-icon') && (btn.querySelector('.pa-icon').textContent = '❤️');
+  } else {
+    btn.classList.remove('pa-liked');
+    btn.querySelector('.pa-icon') && (btn.querySelector('.pa-icon').textContent = '🤍');
+  }
+}
+
+/* ── Comments ── */
+function toggleComments(postId) {
+  const section = document.getElementById(`comments-${postId}`);
+  if (section.style.display === 'none') {
+    section.style.display = 'block';
+    const input = document.getElementById(`comment-input-${postId}`);
+    if (input) input.focus();
+  } else {
+    section.style.display = 'none';
+  }
+}
+
+async function submitComment(postId) {
+  const input = document.getElementById(`comment-input-${postId}`);
+  const content = input.value.trim();
+  if (!content) return;
+  input.value = '';
+
+  const fd = new FormData();
+  fd.append('content', content);
+  const res = await fetch(`/wall/post/${postId}/comment/`, {
+    method: 'POST',
+    headers: {'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': CSRF},
+    body: fd,
+  });
+  const c = await res.json();
+  if (c.error) return;
+
+  const list = document.getElementById(`comments-list-${postId}`);
+  const avatarHtml = c.author.avatar
+    ? `<img src="${c.author.avatar}" class="comment-avatar" alt="">`
+    : `<div class="comment-avatar comment-avatar-ph">${c.author.initial}</div>`;
+
+  list.insertAdjacentHTML('beforeend', `
+    <div class="comment" id="comment-${c.id}">
+      ${avatarHtml}
+      <div class="comment-bubble">
+        <div class="comment-author">${c.author.username}</div>
+        <div class="comment-text">${c.content.replace(/\n/g,'<br>')}</div>
+        <div class="comment-time">${c.time_ago}</div>
+      </div>
+      <button class="comment-delete" onclick="deleteComment(${c.id},${postId})">×</button>
+    </div>`);
+
+  document.getElementById(`comment-count-${postId}`).textContent = c.comment_count;
+}
+
+/* ── Delete ── */
+async function deletePost(postId) {
+  if (!confirm('Delete this post?')) return;
+  const res = await fetch(`/wall/post/${postId}/delete/`, {
+    method: 'POST', headers: {'X-CSRFToken': CSRF},
+  });
+  const data = await res.json();
+  if (data.deleted) document.getElementById(`post-${postId}`)?.remove();
+}
+
+async function deleteComment(commentId, postId) {
+  const res = await fetch(`/wall/comment/${commentId}/delete/`, {
+    method: 'POST', headers: {'X-CSRFToken': CSRF},
+  });
+  const data = await res.json();
+  if (data.deleted) {
+    document.getElementById(`comment-${commentId}`)?.remove();
+    document.getElementById(`comment-count-${postId}`).textContent = data.comment_count;
+  }
+}
+
+/* ── Lightbox ── */
+function openLightbox(url) {
+  document.getElementById('lightbox-img').src = url;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox() {
+  document.getElementById('lightbox').classList.remove('open');
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
+/* ── Share ── */
+function sharePost(id, preview) {
+  const url = `${location.origin}/wall/#post-${id}`;
+  if (navigator.share) {
+    navigator.share({ title: 'Check this pigeon!', text: preview, url });
+  } else {
+    navigator.clipboard.writeText(url).then(() => alert('Link copied!'));
+  }
+}
+
+/* Close pigeon picker on outside click */
+document.addEventListener('click', e => {
+  const picker = document.getElementById('pigeon-picker');
+  if (picker && !e.target.closest('.pigeon-dropdown-wrap')) {
+    picker.style.display = 'none';
+  }
+});
+</script>
+
+{% endblock %}

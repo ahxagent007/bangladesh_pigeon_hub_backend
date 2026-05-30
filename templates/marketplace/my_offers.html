@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+{% block title %}My Offers — BPH{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:36px;padding-bottom:60px;">
+  <h1 style="font-size:22px;font-weight:800;margin-bottom:24px;">💰 Offers</h1>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+
+    <!-- Sent -->
+    <div>
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:14px;">📤 Offers I Sent</h2>
+      {% for offer in sent %}
+      <div class="offer-card status-{{ offer.status }}">
+        <div class="offer-title"><a href="/marketplace/{{ offer.listing.pk }}/">{{ offer.listing.title }}</a></div>
+        <div class="offer-amount">BDT {{ offer.amount }}</div>
+        <div class="offer-status-badge badge-{{ offer.status }}">{{ offer.get_status_display }}</div>
+        {% if offer.status == 'countered' %}
+          <div style="font-size:13px;margin-top:8px;background:#fff7ed;padding:8px;border-radius:6px;">
+            Counter: <strong>BDT {{ offer.counter_amount }}</strong> — {{ offer.counter_msg }}
+          </div>
+        {% endif %}
+        {% if offer.status == 'accepted' %}
+          {% if offer.payment %}
+            <div style="font-size:13px;margin-top:8px;color:#065f46;">✅ Payment {{ offer.payment.get_status_display }}</div>
+          {% else %}
+          <form method="post" action="/marketplace/offers/{{ offer.pk }}/pay/" style="margin-top:10px;">
+            {% csrf_token %}
+            <select name="method" style="border:1px solid var(--border);border-radius:6px;padding:6px;font-size:13px;margin-bottom:6px;">
+              <option value="bkash">bKash</option>
+              <option value="nagad">Nagad</option>
+              <option value="rocket">Rocket</option>
+            </select>
+            <input type="text" name="trx_id" placeholder="Transaction ID" required
+                   style="border:1px solid var(--border);border-radius:6px;padding:6px;font-size:13px;width:100%;margin-bottom:6px;">
+            <button type="submit" class="btn-primary btn-sm">Submit Payment</button>
+          </form>
+          {% endif %}
+        {% endif %}
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">{{ offer.created_at|timesince }} ago</div>
+      </div>
+      {% empty %}<p style="color:var(--text-muted);font-size:14px;">No offers sent yet.</p>{% endfor %}
+    </div>
+
+    <!-- Received -->
+    <div>
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:14px;">📥 Offers I Received</h2>
+      {% for offer in received %}
+      <div class="offer-card status-{{ offer.status }}">
+        <div class="offer-title">{{ offer.listing.title }}</div>
+        <div style="font-size:13px;color:var(--text-muted);">from <strong>{{ offer.buyer.username }}</strong></div>
+        <div class="offer-amount">BDT {{ offer.amount }}</div>
+        {% if offer.message %}<div style="font-size:13px;font-style:italic;margin:6px 0;">"{{ offer.message }}"</div>{% endif %}
+        <div class="offer-status-badge badge-{{ offer.status }}">{{ offer.get_status_display }}</div>
+        {% if offer.status == 'pending' %}
+        <form method="post" action="/marketplace/offers/{{ offer.pk }}/respond/" style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;">
+          {% csrf_token %}
+          <button name="action" value="accept" class="btn-primary btn-sm">✅ Accept</button>
+          <button name="action" value="reject" class="btn-danger btn-sm">❌ Decline</button>
+          <details style="flex:1;">
+            <summary style="cursor:pointer;font-size:13px;color:var(--primary);">🔄 Counter</summary>
+            <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px;">
+              <input type="number" name="counter_amount" placeholder="Counter amount (BDT)" min="1" step="1"
+                     style="border:1px solid var(--border);border-radius:6px;padding:7px;font-size:13px;">
+              <input type="text" name="counter_msg" placeholder="Counter message"
+                     style="border:1px solid var(--border);border-radius:6px;padding:7px;font-size:13px;">
+              <button name="action" value="counter" class="btn-outline btn-sm">Send Counter</button>
+            </div>
+          </details>
+        </form>
+        {% endif %}
+        {% if offer.status == 'accepted' and offer.payment and offer.payment.status == 'pending' %}
+        <form method="post" action="/marketplace/offers/{{ offer.pk }}/confirm/" style="margin-top:8px;">
+          {% csrf_token %}
+          <div style="font-size:13px;margin-bottom:6px;">
+            Payment via <strong>{{ offer.payment.get_method_display }}</strong> — TxID: <code>{{ offer.payment.trx_id }}</code>
+          </div>
+          <button type="submit" class="btn-primary btn-sm">✅ Confirm Payment Received</button>
+        </form>
+        {% endif %}
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">{{ offer.created_at|timesince }} ago</div>
+      </div>
+      {% empty %}<p style="color:var(--text-muted);font-size:14px;">No offers received yet.</p>{% endfor %}
+    </div>
+  </div>
+</div>
+<style>
+.offer-card { background:white;border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px; }
+.offer-title { font-weight:700;font-size:14px;margin-bottom:4px; }
+.offer-title a { color:var(--primary);text-decoration:none; }
+.offer-amount { font-size:20px;font-weight:800;color:var(--primary);margin:4px 0; }
+.offer-status-badge { display:inline-block;padding:2px 10px;border-radius:999px;font-size:11px;font-weight:700; }
+.badge-pending   { background:#fef3c7;color:#92400e; }
+.badge-accepted  { background:#d1fae5;color:#065f46; }
+.badge-rejected  { background:#fee2e2;color:#991b1b; }
+.badge-countered { background:#e0e7ff;color:#3730a3; }
+.badge-withdrawn { background:#f3f4f6;color:#6b7280; }
+@media(max-width:768px){ div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;} }
+</style>
+{% endblock %}

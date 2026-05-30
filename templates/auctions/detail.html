@@ -1,0 +1,510 @@
+{% extends 'base.html' %}
+{% block title %}{{ auction.title }} — BPH Auction{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ── Page wrapper ── */
+.auc-page-bg     { background: #f0f2f5; min-height: 100vh; padding: 32px 0 80px; }
+.auc-detail-wrap { padding: 0 16px; }
+.auc-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 28px;
+  align-items: start;
+}
+/* Prevent any grid child from blowing out its column */
+.auc-detail-grid > * { min-width: 0; }
+
+/* ── Gallery (left column) ── */
+.auc-gallery       { margin-bottom: 16px; }
+.auc-detail-img-wrap {
+  position: relative; border-radius: 14px;
+  overflow: hidden; margin-bottom: 10px;
+  background: #f3f4f6;
+}
+.auc-detail-img {
+  width: 100%; height: 420px;
+  object-fit: cover; display: block;
+  transition: opacity .2s;
+}
+.auc-detail-img-ph {
+  width: 100%; height: 420px;
+  background: linear-gradient(135deg, #ffedd5, #fef3c7);
+  display: flex; align-items: center;
+  justify-content: center; font-size: 96px;
+}
+.auc-ended-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  color: white; text-align: center;
+}
+.auc-ended-overlay-text { font-size: 28px; font-weight: 900; letter-spacing: 2px; }
+
+/* Thumbnail strip */
+.auc-thumbs-strip {
+  display: flex; gap: 8px;
+  overflow-x: auto; padding-bottom: 4px;
+  scrollbar-width: thin;
+}
+.auc-thumb {
+  flex-shrink: 0; width: 76px; height: 62px;
+  border-radius: 8px; overflow: hidden;
+  border: 2px solid var(--border);
+  cursor: pointer; transition: border-color .15s;
+}
+.auc-thumb img        { width: 100%; height: 100%; object-fit: cover; display: block; }
+.auc-thumb:hover      { border-color: #fdba74; }
+.auc-thumb--active    { border-color: var(--primary); }
+
+/* Info cards */
+.auc-info-card {
+  background: white; border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px; margin-bottom: 16px;
+  overflow-wrap: break-word; word-break: break-word;
+}
+.auc-card-heading { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+.auc-pigeon-specs {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+}
+.auc-spec-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .4px; }
+.auc-spec-val   { font-size: 14px; font-weight: 600; margin-top: 2px; }
+
+/* Pedigree */
+.auc-pedigree-wrap {
+  position: relative; border-radius: 10px;
+  overflow: hidden; cursor: pointer; max-height: 240px;
+}
+.auc-pedigree-thumb { width: 100%; display: block; object-fit: contain; background: #f9fafb; }
+.auc-pedigree-overlay {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0); color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: 15px;
+  transition: background .2s;
+}
+.auc-pedigree-wrap:hover .auc-pedigree-overlay { background: rgba(0,0,0,.45); }
+
+/* ── Bid Panel (right column) ── */
+.auc-bid-panel {
+  position: sticky; top: 80px;
+  background: white; border: 1px solid var(--border);
+  border-radius: 16px; padding: 24px;
+  display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+
+/* Status banners */
+.auc-status-banner  { border-radius: 8px; padding: 10px 14px; font-size: 14px; font-weight: 600; }
+.auc-status-ended   { background: #fee2e2; color: #991b1b; }
+.auc-status-upcoming{ background: #fef3c7; color: #92400e; }
+.auc-winning-banner { background: #d1fae5; color: #065f46; border-radius: 8px; padding: 10px 14px; font-size: 14px; font-weight: 700; text-align: center; }
+.auc-outbid-banner  { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; border-radius: 8px; padding: 10px 14px; font-size: 13px; font-weight: 600; }
+
+/* Title + seller */
+.abp-title  { font-size: 20px; font-weight: 800; line-height: 1.3; }
+.abp-seller { font-size: 13px; color: var(--text-muted); }
+.abp-seller a { color: var(--primary); text-decoration: none; }
+
+/* Countdown */
+.abp-countdown-wrap  { background: #fff7ed; border-radius: 10px; padding: 14px; text-align: center; }
+.abp-countdown-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.abp-countdown       { font-size: 36px; font-weight: 900; color: var(--primary); font-variant-numeric: tabular-nums; letter-spacing: 2px; }
+.abp-countdown.urgent{ color: #ef4444; }
+.abp-countdown-end   { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+
+/* Price block */
+.abp-price-wrap   { border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 14px 0; }
+.abp-price-label  { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+.abp-price        { font-size: 34px; font-weight: 900; color: var(--primary); transition: transform .2s; }
+.abp-price.flash  { transform: scale(1.08); }
+.abp-bids         { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+/* Bid form */
+.abp-bid-form       { display: flex; flex-direction: column; gap: 8px; }
+.abp-bid-input-wrap {
+  display: flex; align-items: center;
+  border: 2px solid var(--border); border-radius: 10px;
+  overflow: hidden; transition: border-color .15s;
+}
+.abp-bid-input-wrap:focus-within { border-color: var(--primary); }
+.abp-currency  { background: #f9fafb; padding: 12px 14px; font-size: 18px; font-weight: 700; color: var(--text-muted); }
+.abp-bid-input { flex: 1; border: none; outline: none; padding: 12px; font-size: 20px; font-weight: 700; }
+.abp-bid-hint  { font-size: 12px; color: var(--text-muted); }
+.abp-bid-btn   {
+  background: var(--primary); color: white; border: none;
+  padding: 14px; border-radius: 10px; font-size: 16px; font-weight: 700;
+  cursor: pointer; width: 100%;
+  transition: background .15s, transform .1s;
+  box-shadow: 0 3px 10px rgba(234,88,12,.3);
+}
+.abp-bid-btn:hover  { background: var(--primary-dark); transform: translateY(-1px); }
+.abp-bid-btn:active { transform: translateY(0); }
+.abp-bid-error   { background: #fee2e2; color: #991b1b; padding: 10px; border-radius: 8px; font-size: 13px; }
+.abp-bid-success { background: #d1fae5; color: #065f46; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: 600; }
+.abp-own-listing { text-align: center; font-size: 14px; color: var(--text-muted); background: var(--bg); border-radius: 8px; padding: 16px; }
+
+/* Watch button */
+.abp-watch-btn {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 10px; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all .15s; width: 100%;
+}
+.abp-watch-btn:hover        { border-color: var(--primary); }
+.abp-watch-btn--watching    { background: #fff7ed; border-color: #fdba74; color: #9a3412; }
+
+/* Bid history */
+.abp-history       { border-top: 1px solid var(--border); padding-top: 14px; }
+.abp-history-title { font-size: 12px; font-weight: 700; margin-bottom: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+.abp-bid-row       { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.abp-bid-row:last-child { border-bottom: none; }
+.abp-bid-user   { flex: 1; font-size: 13px; font-weight: 600; }
+.abp-bid-amount { font-size: 14px; font-weight: 700; color: var(--primary); }
+.abp-bid-time   { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+.abp-empty      { text-align: center; padding: 20px; color: var(--text-muted); font-size: 14px; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .auc-detail-grid { grid-template-columns: 1fr; }
+  .auc-bid-panel   { position: static; }
+  .auc-detail-img, .auc-detail-img-ph { height: 300px; }
+}
+@media (max-width: 600px) {
+  .auc-pigeon-specs { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auc-page-bg">
+<div class="container auc-detail-wrap">
+  <div class="auc-detail-grid">
+
+    <!-- ── Left: Gallery + Info ── -->
+    <div>
+
+      <!-- Gallery -->
+      <div class="auc-gallery">
+        <div class="auc-detail-img-wrap">
+          {% if gallery_imgs %}
+            <img src="{{ gallery_imgs.0.url }}" alt="{{ auction.title }}"
+                 class="auc-detail-img" id="auc-main-img">
+          {% else %}
+            <div class="auc-detail-img-ph">🐦</div>
+          {% endif %}
+          {% if auction.status == 'ended' %}
+          <div class="auc-ended-overlay">
+            <div class="auc-ended-overlay-text">AUCTION ENDED</div>
+            {% if auction.winner %}
+              <div style="font-size:14px;margin-top:6px;">🏆 Won by {{ auction.winner.username }}</div>
+            {% endif %}
+          </div>
+          {% endif %}
+        </div>
+
+        {% if gallery_imgs|length > 1 %}
+        <div class="auc-thumbs-strip">
+          {% for img in gallery_imgs %}
+          <div class="auc-thumb {% if forloop.first %}auc-thumb--active{% endif %}"
+               onclick="switchMain(this,'{{ img.url }}')" title="{{ img.caption }}">
+            <img src="{{ img.url }}" alt="">
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Pigeon details -->
+      {% if auction.pigeon %}
+      <div class="auc-info-card">
+        <div class="auc-card-heading">🐦 About This Pigeon</div>
+        <div class="auc-pigeon-specs">
+          <div><div class="auc-spec-label">Name</div><div class="auc-spec-val">{{ auction.pigeon.name }}</div></div>
+          <div><div class="auc-spec-label">Breed</div><div class="auc-spec-val">{% if auction.pigeon.breed %}{{ auction.pigeon.breed.name }}{% else %}Unknown{% endif %}</div></div>
+          <div><div class="auc-spec-label">Gender</div><div class="auc-spec-val">{{ auction.pigeon.get_gender_display }}</div></div>
+          <div><div class="auc-spec-label">Color</div><div class="auc-spec-val">{{ auction.pigeon.get_color_display }}</div></div>
+          <div><div class="auc-spec-label">Age</div><div class="auc-spec-val">{{ auction.pigeon.age_display }}</div></div>
+          {% if auction.pigeon.ring_number %}<div><div class="auc-spec-label">Ring #</div><div class="auc-spec-val">{{ auction.pigeon.ring_number }}</div></div>{% endif %}
+        </div>
+        {% if auction.pigeon.description %}
+        <div style="margin-top:14px;font-size:13px;color:var(--text-muted);line-height:1.7;border-top:1px solid var(--border);padding-top:12px;">
+          {{ auction.pigeon.description }}
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Pedigree -->
+      {% if pedigree_img %}
+      <div class="auc-info-card">
+        <div class="auc-card-heading">🏅 Pedigree Certificate</div>
+        <div class="auc-pedigree-wrap" onclick="openLightbox('{{ pedigree_img.url }}')">
+          <img src="{{ pedigree_img.url }}" alt="Pedigree" class="auc-pedigree-thumb">
+          <div class="auc-pedigree-overlay"><span>🔍 View Full Size</span></div>
+        </div>
+        <a href="{{ pedigree_img.url }}" target="_blank"
+           style="display:inline-block;margin-top:10px;font-size:13px;color:var(--primary);">
+          Open in new tab →
+        </a>
+      </div>
+      {% endif %}
+
+      <!-- Auction description -->
+      <div class="auc-info-card">
+        <div class="auc-card-heading">📋 Auction Details</div>
+        <div style="font-size:14px;line-height:1.8;color:var(--text);">{{ auction.description|linebreaksbr }}</div>
+        <div style="margin-top:14px;display:flex;gap:20px;flex-wrap:wrap;font-size:12px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:12px;">
+          <span>Min increment: <strong>BDT {{ auction.min_increment|floatformat:"0" }}</strong></span>
+          <span>Anti-snipe: <strong>+{{ auction.anti_snipe_min }} min on late bids</strong></span>
+          <span>Starts: <strong>{{ auction.start_time|date:"d M Y, g:i A" }}</strong></span>
+          <span>Ends: <strong>{{ auction.end_time|date:"d M Y, g:i A" }}</strong></span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── Right: Bid Panel ── -->
+    <div class="auc-bid-panel" id="bid-panel">
+
+      <!-- Status -->
+      {% if auction.status == 'ended' %}
+        <div class="auc-status-banner auc-status-ended">
+          🏁 Auction Ended{% if auction.winner %} · Winner: <strong>{{ auction.winner.username }}</strong>{% endif %}
+          {% if not auction.reserve_met and auction.bid_count == 0 %} · No bids placed{% endif %}
+        </div>
+      {% elif auction.status == 'upcoming' %}
+        <div class="auc-status-banner auc-status-upcoming">
+          🕐 Starts {{ auction.start_time|date:"d M Y, g:i A" }}
+        </div>
+      {% endif %}
+
+      {% if is_top_bidder and auction.status == 'live' %}
+        <div class="auc-winning-banner">🎉 You are the highest bidder!</div>
+      {% elif user_top_bid and not is_top_bidder and auction.status == 'live' %}
+        <div class="auc-outbid-banner">⚠️ You've been outbid! Your highest: BDT {{ user_top_bid.amount|floatformat:"0" }}</div>
+      {% endif %}
+
+      <!-- Title + seller -->
+      <div>
+        <div class="abp-title">{{ auction.title }}</div>
+        <div class="abp-seller">
+          by <a href="/users/{{ auction.seller.username }}/">{{ auction.seller.username }}</a>
+          &nbsp;·&nbsp; 👁 {{ auction.views_count }} views
+        </div>
+      </div>
+
+      <!-- Countdown (live only) -->
+      {% if auction.status == 'live' %}
+      <div class="abp-countdown-wrap">
+        <div class="abp-countdown-label">⏱ Time Remaining</div>
+        <div class="abp-countdown" id="countdown">—</div>
+        <div class="abp-countdown-end">Ends {{ auction.end_time|date:"d M Y, g:i A" }}</div>
+      </div>
+      {% endif %}
+
+      <!-- Current price -->
+      <div class="abp-price-wrap">
+        <div class="abp-price-label">
+          {% if auction.status == 'ended' %}Final Price{% elif auction.bid_count > 0 %}Current Bid{% else %}Starting Price{% endif %}
+        </div>
+        <div class="abp-price" id="current-price">BDT {{ auction.display_price|floatformat:"0" }}</div>
+        <div class="abp-bids" id="bid-count">{{ auction.bid_count }} bid{{ auction.bid_count|pluralize }}</div>
+        {% if not auction.reserve_met and auction.status == 'live' %}
+          <div style="font-size:12px;color:#d97706;margin-top:4px;">⚠️ Reserve price not yet met</div>
+        {% endif %}
+      </div>
+
+      <!-- Bid form (live only) -->
+      {% if auction.status == 'live' %}
+        {% if user.is_authenticated %}
+          {% if auction.seller != user %}
+          <form id="bid-form" class="abp-bid-form">
+            {% csrf_token %}
+            <div class="abp-bid-input-wrap">
+              <span class="abp-currency">৳</span>
+              <input type="number" id="bid-amount" name="amount"
+                     min="{{ min_bid }}" step="{{ auction.min_increment }}"
+                     placeholder="{{ min_bid|floatformat:'0' }}"
+                     class="abp-bid-input" required>
+            </div>
+            <div class="abp-bid-hint">
+              Minimum bid: <strong>BDT <span id="min-bid-val">{{ min_bid|floatformat:"0" }}</span></strong>
+            </div>
+            <button type="submit" class="abp-bid-btn" id="bid-btn">Place Bid</button>
+            <div class="abp-bid-error"   id="bid-error"   style="display:none;"></div>
+            <div class="abp-bid-success" id="bid-success" style="display:none;"></div>
+          </form>
+          {% else %}
+          <div class="abp-own-listing">
+            This is your auction.
+            <br>
+            <a href="/auctions/{{ auction.pk }}/dashboard/" class="btn-outline btn-sm"
+               style="margin-top:10px;display:inline-block;">View Dashboard</a>
+          </div>
+          {% endif %}
+        {% else %}
+          <a href="/auth/login/?next=/auctions/{{ auction.pk }}/"
+             class="abp-bid-btn" style="display:block;text-align:center;text-decoration:none;">
+            Login to Bid
+          </a>
+        {% endif %}
+      {% endif %}
+
+      <!-- Watch button -->
+      {% if user.is_authenticated %}
+        {% if auction.status == 'live' or auction.status == 'upcoming' %}
+        <button class="abp-watch-btn {% if is_watching %}abp-watch-btn--watching{% endif %}"
+                id="watch-btn" onclick="toggleWatch()">
+          {% if is_watching %}👁 Watching · {{ auction.watchers.count }}{% else %}🔔 Watch Auction{% endif %}
+        </button>
+        {% endif %}
+      {% endif %}
+
+      <!-- Bid history -->
+      <div class="abp-history">
+        <div class="abp-history-title">Bid History</div>
+        <div id="bid-history">
+          {% if bids %}
+            {% for bid in bids %}
+            <div class="abp-bid-row">
+              <div class="abp-bid-user">{{ bid.bidder.username }}</div>
+              <div class="abp-bid-amount">BDT {{ bid.amount|floatformat:"0" }}</div>
+              <div class="abp-bid-time">{{ bid.created_at|timesince }} ago</div>
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="abp-empty">No bids yet — be the first!</div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div><!-- /bid-panel -->
+  </div><!-- /grid -->
+</div><!-- /wrap -->
+</div><!-- /page-bg -->
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const AUC_ID  = {{ auction.pk }};
+const CSRF    = document.cookie.match(/csrftoken=([^;]+)/)?.[1] || '';
+let   endTime = new Date('{{ auction.end_time.isoformat }}');
+let   pollInterval;
+
+/* ── Countdown ── */
+function fmtCountdown(sec) {
+  if (sec <= 0) return '0s';
+  const h = Math.floor(sec / 3600);
+  const m = Math.floor((sec % 3600) / 60);
+  const s = sec % 60;
+  const p = n => String(n).padStart(2, '0');
+  if (h > 0) return `${h}h ${p(m)}m ${p(s)}s`;
+  if (m > 0) return `${m}m ${p(s)}s`;
+  return `${s}s`;
+}
+const cdEl = document.getElementById('countdown');
+function tickCountdown() {
+  if (!cdEl) return;
+  const sec = Math.floor((endTime - new Date()) / 1000);
+  cdEl.textContent = fmtCountdown(Math.max(0, sec));
+  cdEl.classList.toggle('urgent', sec < 300 && sec >= 0);
+}
+if (cdEl) { tickCountdown(); setInterval(tickCountdown, 1000); }
+
+/* ── Live poll every 5 s ── */
+{% if auction.status == 'live' %}
+async function pollStatus() {
+  try {
+    const d = await fetch(`/auctions/${AUC_ID}/poll/`).then(r => r.json());
+    const priceEl = document.getElementById('current-price');
+    const newTxt  = `BDT ${parseInt(d.current_price).toLocaleString()}`;
+    if (priceEl && priceEl.textContent !== newTxt) {
+      priceEl.textContent = newTxt;
+      priceEl.classList.add('flash');
+      setTimeout(() => priceEl.classList.remove('flash'), 400);
+    }
+    const bcEl = document.getElementById('bid-count');
+    if (bcEl) bcEl.textContent = `${d.bid_count} bid${d.bid_count !== 1 ? 's' : ''}`;
+    const mbEl = document.getElementById('min-bid-val');
+    const biEl = document.getElementById('bid-amount');
+    if (mbEl) mbEl.textContent = parseInt(d.min_bid).toLocaleString();
+    if (biEl) { biEl.min = d.min_bid; biEl.placeholder = parseInt(d.min_bid).toLocaleString(); }
+    endTime = new Date(d.end_time_iso);
+    if (d.status === 'ended') { clearInterval(pollInterval); location.reload(); }
+  } catch (_) {}
+}
+pollInterval = setInterval(pollStatus, 5000);
+{% endif %}
+
+/* ── Place Bid ── */
+document.getElementById('bid-form')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const btn  = document.getElementById('bid-btn');
+  const errEl = document.getElementById('bid-error');
+  const sucEl = document.getElementById('bid-success');
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Placing…';
+
+  const res  = await fetch(`/auctions/${AUC_ID}/bid/`, {
+    method: 'POST', headers: { 'X-CSRFToken': CSRF }, body: new FormData(this),
+  });
+  const data = await res.json();
+  btn.disabled = false; btn.textContent = 'Place Bid';
+
+  if (data.error) { errEl.textContent = data.error; errEl.style.display = 'block'; return; }
+
+  sucEl.textContent = `✅ Bid of BDT ${parseInt(data.current_price).toLocaleString()} placed!${data.extended ? ' ⏱ Time extended!' : ''}`;
+  sucEl.style.display = 'block';
+  document.getElementById('bid-amount').value = '';
+  if (typeof pollStatus === 'function') pollStatus();
+
+  const hist = document.getElementById('bid-history');
+  if (hist) {
+    const row = document.createElement('div');
+    row.className = 'abp-bid-row';
+    row.innerHTML = `<div class="abp-bid-user">${data.bidder} (you)</div>`
+                  + `<div class="abp-bid-amount">BDT ${parseInt(data.current_price).toLocaleString()}</div>`
+                  + `<div class="abp-bid-time">just now</div>`;
+    const empty = hist.querySelector('.abp-empty');
+    if (empty) empty.remove();
+    hist.prepend(row);
+  }
+});
+
+/* ── Watch ── */
+async function toggleWatch() {
+  const d   = await fetch(`/auctions/${AUC_ID}/watch/`, { method: 'POST', headers: { 'X-CSRFToken': CSRF } }).then(r => r.json());
+  const btn = document.getElementById('watch-btn');
+  if (btn) {
+    btn.textContent = d.watching ? `👁 Watching · ${d.watchers}` : '🔔 Watch Auction';
+    btn.classList.toggle('abp-watch-btn--watching', d.watching);
+  }
+}
+
+/* ── Gallery ── */
+function switchMain(thumbEl, url) {
+  const img = document.getElementById('auc-main-img');
+  if (img) { img.style.opacity = '0'; setTimeout(() => { img.src = url; img.style.opacity = '1'; }, 150); }
+  document.querySelectorAll('.auc-thumb').forEach(t => t.classList.remove('auc-thumb--active'));
+  thumbEl.classList.add('auc-thumb--active');
+}
+
+/* ── Pedigree lightbox ── */
+function openLightbox(url) {
+  const lb = document.createElement('div');
+  lb.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.92);display:flex;align-items:center;justify-content:center;z-index:2000;cursor:zoom-out;';
+  lb.onclick = () => lb.remove();
+  const img = Object.assign(document.createElement('img'), { src: url });
+  img.style.cssText = 'max-width:92vw;max-height:92vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.6);';
+  const x = document.createElement('button');
+  x.textContent = '×';
+  x.style.cssText = 'position:absolute;top:20px;right:24px;background:none;border:none;color:white;font-size:40px;cursor:pointer;line-height:1;';
+  x.onclick = e => { e.stopPropagation(); lb.remove(); };
+  lb.append(img, x);
+  document.body.appendChild(lb);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') lb.remove(); }, { once: true });
+}
+</script>
+{% endblock %}

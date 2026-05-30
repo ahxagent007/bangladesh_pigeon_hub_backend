@@ -99,10 +99,17 @@
 
         {% if user.is_authenticated %}
           {% if listing.seller != user %}
-            <a href="/messages/start/{{ listing.id }}/" class="btn-primary"
-               style="display:block;text-align:center;padding:12px;margin-bottom:8px;
-                      font-size:16px;">
+            <a href="/marketplace/{{ listing.id }}/offer/" class="btn-primary"
+               style="display:block;text-align:center;padding:12px;margin-bottom:8px;font-size:16px;">
+              💰 Make an Offer
+            </a>
+            <a href="/messages/start/{{ listing.id }}/" class="btn-outline"
+               style="display:block;text-align:center;padding:10px;margin-bottom:8px;">
               💬 Contact Seller
+            </a>
+            <a href="/users/{{ listing.seller.username }}/" class="btn-outline"
+               style="display:block;text-align:center;padding:10px;margin-bottom:8px;font-size:13px;">
+              👤 View Seller Profile
             </a>
             {% if is_saved %}
               <a href="/marketplace/{{ listing.id }}/save/" class="btn-outline"

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}Events — BPH{% endblock %}
+{% block content %}
+<div class="container" style="padding:36px 16px 80px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px;">
+    <div><h1 style="font-size:24px;font-weight:800;margin-bottom:4px;">📅 Pigeon Events</h1>
+    <p style="color:var(--text-muted);">Shows, races, auctions &amp; meetups across Bangladesh</p></div>
+    {% if user.is_authenticated %}<a href="/events/create/" class="btn-primary">+ Create Event</a>{% endif %}
+  </div>
+
+  {% if upcoming %}
+  <h2 style="font-size:18px;font-weight:700;margin-bottom:16px;">🔜 Upcoming</h2>
+  <div class="event-grid">
+    {% for event in upcoming %}
+    <a href="/events/{{ event.pk }}/" class="event-card">
+      <div class="event-img-wrap">
+        {% if event.image %}<img src="{{ event.image.url }}" alt="" class="event-img">
+        {% else %}<div class="event-img-ph">{% if event.event_type == 'race' %}🏁{% elif event.event_type == 'show' %}🏆{% elif event.event_type == 'auction' %}🔨{% else %}🤝{% endif %}</div>{% endif %}
+        <span class="event-type-badge">{{ event.get_event_type_display }}</span>
+      </div>
+      <div class="event-body">
+        <div class="event-date">📅 {{ event.date|date:"d M Y" }}{% if event.time %} · {{ event.time|time:"g:i A" }}{% endif %}</div>
+        <div class="event-title">{{ event.title }}</div>
+        <div class="event-loc">📍 {{ event.location }}, {{ event.get_district_display }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px;background:white;border-radius:12px;border:2px dashed var(--border);">
+    <div style="font-size:48px;margin-bottom:12px;">📅</div>
+    <p style="color:var(--text-muted);">No upcoming events. {% if user.is_authenticated %}<a href="/events/create/" style="color:var(--primary);">Create the first one!</a>{% endif %}</p>
+  </div>
+  {% endif %}
+
+  {% if past %}
+  <h2 style="font-size:18px;font-weight:700;margin-top:36px;margin-bottom:16px;">🕐 Past Events</h2>
+  <div class="event-grid" style="opacity:.7;">
+    {% for event in past %}
+    <a href="/events/{{ event.pk }}/" class="event-card">
+      <div class="event-body" style="padding:16px;">
+        <div class="event-date">{{ event.date|date:"d M Y" }}</div>
+        <div class="event-title">{{ event.title }}</div>
+        <div class="event-loc">📍 {{ event.get_district_display }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+<style>
+.event-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px; }
+.event-card { background:white;border:1px solid var(--border);border-radius:12px;overflow:hidden;text-decoration:none;color:inherit;transition:transform .18s,box-shadow .18s;display:flex;flex-direction:column; }
+.event-card:hover { transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.1); }
+.event-img-wrap { position:relative;height:160px;background:#f3f4f6;overflow:hidden; }
+.event-img { width:100%;height:100%;object-fit:cover; }
+.event-img-ph { width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:52px; }
+.event-type-badge { position:absolute;top:10px;left:10px;background:var(--primary);color:white;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700; }
+.event-body { padding:14px; }
+.event-date { font-size:12px;color:var(--primary);font-weight:600;margin-bottom:4px; }
+.event-title { font-size:15px;font-weight:700;margin-bottom:4px; }
+.event-loc { font-size:12px;color:var(--text-muted); }
+</style>
+{% endblock %}

@@ -35,13 +35,22 @@ LOCAL_APPS = [
     'apps.pedigrees',
     'apps.feed_generator',
     'apps.messaging',
+    'apps.wall',
+    'apps.notifications',
+    'apps.contests',
+    'apps.auctions',
 ]
+
+LANGUAGE_CODE = 'en-us'
+TIME_ZONE     = 'Asia/Dhaka'
+USE_TZ        = True
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -63,6 +72,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'apps.notifications.context_processors.notification_count',
             ],
         },
     },
@@ -120,5 +130,18 @@ MEDIA_ROOT = BASE_DIR / 'media'
 LOGIN_URL = '/auth/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
+
+# ── Email (SSL/TLS on port 465) ──────────────────────────────────────────────
+EMAIL_BACKEND      = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST         = 'bdpigeonhub.com'
+EMAIL_PORT         = 465
+EMAIL_USE_SSL      = True   # port 465 = implicit SSL
+EMAIL_USE_TLS      = False  # STARTTLS only for port 587
+EMAIL_HOST_USER    = 'system@bdpigeonhub.com'
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = 'BD Pigeon Hub <system@bdpigeonhub.com>'
+SERVER_EMAIL       = 'system@bdpigeonhub.com'
+
+PASSWORD_RESET_TIMEOUT = 3600   # reset links expire after 1 hour
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

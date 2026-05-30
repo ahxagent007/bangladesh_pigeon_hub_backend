@@ -1,0 +1,226 @@
+{% extends 'base.html' %}
+{% block title %}Auction Dashboard — {{ auction.title }}{% endblock %}
+{% block content %}
+<div class="container" style="padding:36px 16px 80px;">
+
+  <!-- Header -->
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:28px;">
+    <div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:6px;"><a href="/auctions/mine/" style="color:var(--primary);">← My Auctions</a></div>
+      <h1 style="font-size:22px;font-weight:800;margin-bottom:4px;">📊 {{ auction.title }}</h1>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <span class="auc-status-chip auc-status-{{ auction.status }}">{{ auction.get_status_display }}</span>
+        <span style="font-size:13px;color:var(--text-muted);">
+          {{ auction.start_time|date:"d M Y g:i A" }} → {{ auction.end_time|date:"d M Y g:i A" }}
+        </span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <a href="/auctions/{{ auction.pk }}/" class="btn-outline btn-sm">View Listing</a>
+      {% if auction.status in 'live,upcoming' %}
+      <form method="post" style="display:inline;">
+        {% csrf_token %}
+        {% if stats.total_bids == 0 %}
+          <button name="action" value="cancel" class="btn-danger btn-sm"
+                  onclick="return confirm('Cancel this auction?')">Cancel Auction</button>
+        {% endif %}
+        {% if auction.status == 'live' %}
+          <button name="action" value="end_early" class="btn-outline btn-sm"
+                  onclick="return confirm('End this auction now? Winner will be determined.')">End Early</button>
+        {% endif %}
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="dash-stats-grid">
+    <div class="dash-stat-card">
+      <div class="dsc-icon">🔨</div>
+      <div class="dsc-num">{{ stats.total_bids }}</div>
+      <div class="dsc-lbl">Total Bids</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dsc-icon">👥</div>
+      <div class="dsc-num">{{ stats.unique_bidders }}</div>
+      <div class="dsc-lbl">Unique Bidders</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dsc-icon">👁</div>
+      <div class="dsc-num">{{ stats.views }}</div>
+      <div class="dsc-lbl">Page Views</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dsc-icon">🔔</div>
+      <div class="dsc-num">{{ stats.watchers }}</div>
+      <div class="dsc-lbl">Watchers</div>
+    </div>
+    <div class="dash-stat-card dash-stat-card--highlight">
+      <div class="dsc-icon">💰</div>
+      <div class="dsc-num">BDT {{ auction.display_price|floatformat:"0" }}</div>
+      <div class="dsc-lbl">{% if auction.status == 'ended' %}Final Price{% else %}Current Price{% endif %}</div>
+    </div>
+    <div class="dash-stat-card">
+      <div class="dsc-icon">📈</div>
+      <div class="dsc-num">+{{ stats.price_increase }}%</div>
+      <div class="dsc-lbl">Price Increase</div>
+    </div>
+  </div>
+
+  {% if auction.winner %}
+  <div style="background:linear-gradient(135deg,#7c2d12,#ea580c);color:white;border-radius:14px;padding:20px 28px;margin-bottom:24px;display:flex;align-items:center;gap:16px;">
+    <span style="font-size:40px;">🏆</span>
+    <div>
+      <div style="font-size:18px;font-weight:800;">Auction Won by {{ auction.winner.username }}</div>
+      <div style="opacity:.85;font-size:14px;">Final price: BDT {{ auction.display_price|floatformat:"0" }}
+        {% if auction.pigeon %} · Pigeon transferred to winner's profile{% endif %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start;">
+
+    <!-- Left: Bid Timeline + Price Progression -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- Bid Timeline -->
+      <div class="dash-card">
+        <div class="dash-card-title">📅 Bid Timeline (by hour)</div>
+        {% if timeline %}
+        <div class="timeline-chart">
+          {% for bucket,count in timeline.items %}
+          <div class="tc-row">
+            <div class="tc-label">{{ bucket }}</div>
+            <div class="tc-bar-wrap">
+              <div class="tc-bar" style="width:{% widthratio count max_bucket 100 %}%;">
+                <span class="tc-val">{{ count }}</span>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div style="color:var(--text-muted);font-size:14px;padding:16px 0;">No bids yet.</div>
+        {% endif %}
+      </div>
+
+      <!-- Price Progression -->
+      <div class="dash-card">
+        <div class="dash-card-title">💹 Price Progression</div>
+        {% if price_points %}
+        <div class="price-prog">
+          {% for ts,price in price_points %}
+          <div class="pp-row">
+            <div class="pp-time">{{ ts|date:"d/m H:i" }}</div>
+            <div class="pp-bar-wrap">
+              <div class="pp-bar" style="width:{% widthratio price price_max 100 %}%;"></div>
+            </div>
+            <div class="pp-val">BDT {{ price|floatformat:"0" }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+    </div>
+
+    <!-- Right: Bidder Leaderboard + Bid History -->
+    <div style="display:flex;flex-direction:column;gap:20px;">
+
+      <!-- Bidder Leaderboard -->
+      <div class="dash-card">
+        <div class="dash-card-title">🏅 Bidder Leaderboard</div>
+        {% if bidder_stats %}
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border);">
+              <th style="text-align:left;padding:6px 8px;color:var(--text-muted);font-size:11px;text-transform:uppercase;">#</th>
+              <th style="text-align:left;padding:6px 8px;color:var(--text-muted);font-size:11px;text-transform:uppercase;">Bidder</th>
+              <th style="text-align:right;padding:6px 8px;color:var(--text-muted);font-size:11px;text-transform:uppercase;">Highest</th>
+              <th style="text-align:right;padding:6px 8px;color:var(--text-muted);font-size:11px;text-transform:uppercase;">Bids</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for row in bidder_stats %}
+          <tr style="border-bottom:1px solid var(--border);" {% if forloop.first %}class="top-bidder"{% endif %}>
+            <td style="padding:8px 8px;">
+              {% if forloop.counter == 1 %}🥇{% elif forloop.counter == 2 %}🥈{% elif forloop.counter == 3 %}🥉{% else %}{{ forloop.counter }}{% endif %}
+            </td>
+            <td style="padding:8px 8px;font-weight:{% if forloop.first %}700{% else %}500{% endif %};">
+              <a href="/users/{{ row.bidder__username }}/" style="color:{% if forloop.first %}var(--primary){% else %}inherit{% endif %};">{{ row.bidder__username }}</a>
+            </td>
+            <td style="padding:8px 8px;text-align:right;font-weight:700;color:var(--primary);">BDT {{ row.top_bid|floatformat:"0" }}</td>
+            <td style="padding:8px 8px;text-align:right;color:var(--text-muted);">{{ row.bid_count }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}
+        <div style="color:var(--text-muted);font-size:14px;padding:16px 0;">No bids yet.</div>
+        {% endif %}
+      </div>
+
+      <!-- Full Bid History -->
+      <div class="dash-card">
+        <div class="dash-card-title">🔨 All Bids (chronological)</div>
+        <div style="max-height:340px;overflow-y:auto;">
+          {% if bids %}
+          {% for bid in bids %}
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;">
+            <div>
+              <span style="font-weight:600;">{{ bid.bidder.username }}</span>
+              <span style="color:var(--text-muted);margin-left:6px;">{{ bid.created_at|date:"d M H:i" }}</span>
+            </div>
+            <div style="font-weight:700;color:var(--primary);">BDT {{ bid.amount|floatformat:"0" }}</div>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div style="color:var(--text-muted);font-size:14px;padding:16px 0;">No bids yet.</div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+.auc-status-chip { display:inline-block;padding:3px 12px;border-radius:999px;font-size:12px;font-weight:700; }
+.auc-status-live      { background:#fef2f2;color:#dc2626; }
+.auc-status-upcoming  { background:#fef3c7;color:#92400e; }
+.auc-status-ended     { background:#f3f4f6;color:#374151; }
+.auc-status-cancelled { background:#fee2e2;color:#991b1b; }
+
+.dash-stats-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px; }
+.dash-stat-card  { background:white;border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center; }
+.dash-stat-card--highlight { border-color:var(--primary);background:#fff7ed; }
+.dsc-icon { font-size:24px;margin-bottom:6px; }
+.dsc-num  { font-size:24px;font-weight:800;color:var(--primary); }
+.dsc-lbl  { font-size:11px;color:var(--text-muted);margin-top:2px; }
+
+.dash-card { background:white;border:1px solid var(--border);border-radius:12px;padding:20px; }
+.dash-card-title { font-size:14px;font-weight:700;margin-bottom:14px; }
+
+/* Timeline chart */
+.timeline-chart { display:flex;flex-direction:column;gap:8px; }
+.tc-row { display:flex;align-items:center;gap:8px; }
+.tc-label { font-size:11px;color:var(--text-muted);width:90px;flex-shrink:0; }
+.tc-bar-wrap { flex:1;background:#f3f4f6;border-radius:4px;height:22px;overflow:hidden; }
+.tc-bar { background:var(--primary);height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;padding-right:6px;min-width:24px;transition:width .5s; }
+.tc-val { font-size:11px;color:white;font-weight:700; }
+
+/* Price progression */
+.price-prog { display:flex;flex-direction:column;gap:6px; }
+.pp-row { display:flex;align-items:center;gap:8px; }
+.pp-time { font-size:11px;color:var(--text-muted);width:72px;flex-shrink:0; }
+.pp-bar-wrap { flex:1;background:#f3f4f6;border-radius:4px;height:14px;overflow:hidden; }
+.pp-bar { background:linear-gradient(90deg,#fbbf24,var(--primary));height:100%;border-radius:4px;transition:width .5s; }
+.pp-val { font-size:12px;font-weight:700;color:var(--primary);width:90px;text-align:right;flex-shrink:0; }
+
+@media(max-width:768px){
+  .dash-stats-grid{grid-template-columns:repeat(2,1fr);}
+  div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;}
+}
+</style>
+{% endblock %}

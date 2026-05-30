@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}My Auctions — BPH{% endblock %}
+{% block content %}
+<div class="container" style="padding:36px 16px 80px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+    <h1 style="font-size:22px;font-weight:800;">🔨 My Auctions</h1>
+    <a href="/auctions/create/" class="btn-primary">+ New Auction</a>
+  </div>
+  {% if auctions %}
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    {% for a in auctions %}
+    <div class="my-auc-row">
+      <div class="my-auc-img">
+        {% with cover=a.get_cover_image %}{% if cover %}<img src="{{ cover }}" alt="">{% else %}<span>🐦</span>{% endif %}{% endwith %}
+      </div>
+      <div class="my-auc-body">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span class="auc-status-chip auc-status-{{ a.status }}">{{ a.get_status_display }}</span>
+          {% if a.status == 'live' %}<span style="font-size:12px;color:#ef4444;" id="my-cd-{{ a.pk }}" data-end="{{ a.end_time.isoformat }}">...</span>{% endif %}
+        </div>
+        <div style="font-size:16px;font-weight:700;">{{ a.title }}</div>
+        <div style="font-size:13px;color:var(--text-muted);">
+          {{ a.start_time|date:"d M Y" }} → {{ a.end_time|date:"d M Y g:i A" }}
+        </div>
+      </div>
+      <div class="my-auc-stats">
+        <div style="text-align:center;"><div style="font-size:20px;font-weight:800;color:var(--primary);">BDT {{ a.display_price|floatformat:"0" }}</div><div style="font-size:11px;color:var(--text-muted);">Current/Final</div></div>
+        <div style="text-align:center;"><div style="font-size:18px;font-weight:700;">{{ a.bid_count }}</div><div style="font-size:11px;color:var(--text-muted);">Bids</div></div>
+        <div style="text-align:center;"><div style="font-size:18px;font-weight:700;">{{ a.views_count }}</div><div style="font-size:11px;color:var(--text-muted);">Views</div></div>
+      </div>
+      <div class="my-auc-actions">
+        <a href="/auctions/{{ a.pk }}/" class="btn-outline btn-sm">View</a>
+        <a href="/auctions/{{ a.pk }}/dashboard/" class="btn-primary btn-sm">Dashboard</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:60px;background:white;border-radius:12px;border:2px dashed var(--border);">
+    <div style="font-size:48px;margin-bottom:12px;">🔨</div>
+    <p style="color:var(--text-muted);">You haven't created any auctions yet.</p>
+    <a href="/auctions/create/" class="btn-primary" style="margin-top:16px;display:inline-block;">Create First Auction</a>
+  </div>
+  {% endif %}
+</div>
+<style>
+.my-auc-row { background:white;border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap; }
+.my-auc-img { width:72px;height:72px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:28px; }
+.my-auc-img img { width:100%;height:100%;object-fit:cover; }
+.my-auc-body { flex:1;min-width:180px; }
+.my-auc-stats { display:flex;gap:20px;flex-shrink:0; }
+.my-auc-actions { display:flex;gap:8px;flex-shrink:0; }
+.auc-status-chip { display:inline-block;padding:3px 10px;border-radius:999px;font-size:11px;font-weight:700; }
+.auc-status-live      { background:#fef2f2;color:#dc2626; }
+.auc-status-upcoming  { background:#fef3c7;color:#92400e; }
+.auc-status-ended     { background:#f3f4f6;color:#374151; }
+.auc-status-cancelled { background:#fee2e2;color:#991b1b; }
+</style>
+<script>
+document.querySelectorAll('[id^="my-cd-"]').forEach(el => {
+  function tick() {
+    const end = new Date(el.dataset.end), sec = Math.floor((end-new Date())/1000);
+    if (sec <= 0) { el.textContent = 'Ending...'; return; }
+    const m = Math.floor(sec/60), s = sec%60;
+    el.textContent = `⏱ ${m}m ${s}s left`;
+    setTimeout(tick, 1000);
+  }
+  tick();
+});
+</script>
+{% endblock %}

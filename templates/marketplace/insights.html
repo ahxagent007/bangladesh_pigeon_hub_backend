@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Market Insights — BPH{% endblock %}
+{% block content %}
+<div class="container" style="padding:36px 16px 80px;">
+  <h1 style="font-size:24px;font-weight:800;margin-bottom:4px;">📊 Market Insights</h1>
+  <p style="color:var(--text-muted);margin-bottom:32px;">Pricing trends and activity across Bangladesh Pigeon Hub</p>
+
+  <!-- Summary Stats -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:36px;">
+    {% for label,val,icon in total,total,"🐦"|zip %}
+    {% endfor %}
+    <div class="ins-stat"><div class="ins-num">{{ total }}</div><div class="ins-lbl">Total Listings</div></div>
+    <div class="ins-stat"><div class="ins-num">{{ active }}</div><div class="ins-lbl">Active Now</div></div>
+    <div class="ins-stat"><div class="ins-num">{{ sold }}</div><div class="ins-lbl">Sold</div></div>
+    <div class="ins-stat"><div class="ins-num">৳{{ avg_all|floatformat:"0" }}</div><div class="ins-lbl">Avg Price</div></div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start;">
+
+    <!-- Price by Breed -->
+    <div class="ins-card">
+      <h2 class="ins-card-title">💰 Price by Breed</h2>
+      {% if by_breed %}
+      <table class="ins-table">
+        <thead><tr><th>Breed</th><th>Avg</th><th>Min</th><th>Max</th><th>Listings</th></tr></thead>
+        <tbody>
+        {% for b in by_breed %}
+        <tr>
+          <td>{{ b.pigeon__breed__name }}</td>
+          <td style="font-weight:700;color:var(--primary);">৳{{ b.avg|floatformat:"0" }}</td>
+          <td style="color:#6b7280;">৳{{ b.mn|floatformat:"0" }}</td>
+          <td style="color:#6b7280;">৳{{ b.mx|floatformat:"0" }}</td>
+          <td><span style="background:#ffedd5;color:#9a3412;padding:1px 8px;border-radius:999px;font-size:12px;font-weight:700;">{{ b.cnt }}</span></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p style="color:var(--text-muted);">No breed data yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- By District -->
+    <div class="ins-card">
+      <h2 class="ins-card-title">📍 Active Listings by District</h2>
+      {% if by_district %}
+      {% for row in by_district %}
+      <div style="margin-bottom:10px;">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px;">
+          <span>{{ row.label }}</span><span style="font-weight:700;">{{ row.cnt }}</span>
+        </div>
+        <div style="background:#f3f4f6;border-radius:4px;height:10px;overflow:hidden;">
+          <div style="background:var(--primary);height:100%;width:{% widthratio row.cnt max_district 100 %}%;border-radius:4px;transition:width .4s;"></div>
+        </div>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p style="color:var(--text-muted);">No district data yet.</p>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <!-- Trend -->
+  <div class="ins-card" style="margin-top:28px;">
+    <h2 class="ins-card-title">📈 30-Day Trend</h2>
+    <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div><div style="font-size:32px;font-weight:800;">{{ recent_listings }}</div><div style="color:var(--text-muted);font-size:13px;">New listings this month</div></div>
+      <div style="font-size:28px;">{% if trend > 0 %}📈 +{{ trend }}{% elif trend < 0 %}📉 {{ trend }}{% else %}➡️ Stable{% endif %}</div>
+      <div><div style="font-size:32px;font-weight:800;color:#9ca3af;">{{ previous_listings }}</div><div style="color:var(--text-muted);font-size:13px;">Previous month</div></div>
+    </div>
+  </div>
+</div>
+<style>
+.ins-stat { background:white;border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center; }
+.ins-num  { font-size:28px;font-weight:800;color:var(--primary); }
+.ins-lbl  { font-size:12px;color:var(--text-muted);margin-top:4px; }
+.ins-card { background:white;border:1px solid var(--border);border-radius:12px;padding:24px; }
+.ins-card-title { font-size:16px;font-weight:700;margin-bottom:16px; }
+.ins-table { width:100%;border-collapse:collapse;font-size:13px; }
+.ins-table th { text-align:left;padding:6px 8px;border-bottom:2px solid var(--border);color:var(--text-muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px; }
+.ins-table td { padding:8px 8px;border-bottom:1px solid var(--border); }
+.ins-table tr:last-child td { border-bottom:none; }
+@media(max-width:768px){ div[style*="grid-template-columns:1fr 1fr"]{grid-template-columns:1fr!important;} div[style*="repeat(4,1fr)"]{grid-template-columns:1fr 1fr!important;} }
+</style>
+{% endblock %}

@@ -16,12 +16,38 @@ def register_view(request):
         if form.is_valid():
             user = form.save()
             login(request, user)
-            messages.success(request, f'Welcome, {user.username}!')
+            messages.success(request, f'Welcome to BD Pigeon Hub, {user.username}!')
+            _send_welcome_email(user)
             return redirect('dashboard')
     else:
         form = RegisterForm()
 
     return render(request, 'users/register.html', {'form': form})
+
+
+def _send_welcome_email(user):
+    """Send HTML welcome email to a newly registered user. Fails silently."""
+    try:
+        from django.core.mail import EmailMultiAlternatives
+        from django.template.loader import render_to_string
+        subject = 'Welcome to BD Pigeon Hub! 🐦'
+        html    = render_to_string('users/emails/welcome.html', {'user': user})
+        text    = (
+            f"Hi {user.username},\n\n"
+            "Welcome to BD Pigeon Hub — Bangladesh's #1 pigeon marketplace!\n\n"
+            "You can now:\n"
+            "  • Browse and buy pigeons from sellers across Bangladesh\n"
+            "  • List your own pigeons for sale — free, no commission\n"
+            "  • Join live auctions and bid on premium birds\n"
+            "  • Share your flock on the community wall\n\n"
+            "Get started: https://bdpigeonhub.com\n\n"
+            "— The BD Pigeon Hub Team"
+        )
+        msg = EmailMultiAlternatives(subject, text, None, [user.email])
+        msg.attach_alternative(html, 'text/html')
+        msg.send(fail_silently=True)
+    except Exception:
+        pass   # never crash registration because of email
 
 
 def login_view(request):

@@ -1,101 +1,557 @@
 {% extends 'base.html' %}
-{% block title %}Add Listing — BPH{% endblock %}
+{% block title %}Sell a Pigeon — BPH{% endblock %}
 {% block content %}
-<div class="container" style="padding-top:40px;padding-bottom:60px;">
-  <div style="max-width:560px;margin:0 auto;">
-    <h1 style="font-size:22px;margin-bottom:24px;">Create a Listing</h1>
 
-    <div class="card" style="padding:32px;">
-      <form method="post" novalidate>
-        {% csrf_token %}
+<div class="sell-page">
+  <div class="container">
 
-        <!-- Pigeon -->
-        <div class="form-group">
-          <label>Select Pigeon <span style="color:#ef4444;">*</span></label>
-          <select name="pigeon" required>
-            <option value="">— Choose a pigeon —</option>
-            {% for pigeon in form.pigeon.field.queryset %}
-              <option value="{{ pigeon.pk }}"
-                {% if form.pigeon.value|stringformat:'s' == pigeon.pk|stringformat:'s' %}
-                  selected{% endif %}>
-                {{ pigeon.name }}
-                {% if pigeon.ring_number %}({{ pigeon.ring_number }}){% endif %}
-              </option>
-            {% endfor %}
-          </select>
-          {% if form.pigeon.errors %}
-            <div class="form-error">{{ form.pigeon.errors.0 }}</div>
+    <!-- Page Header -->
+    <div class="sell-header">
+      <h1>🐦 Sell Your Pigeon</h1>
+      <p>List your pigeon in minutes — free, no commission, reach buyers across Bangladesh.</p>
+    </div>
+
+    <!-- Global errors -->
+    {% if errors %}
+      <div class="sell-alert">
+        {% for e in errors %}{{ e }}{% endfor %}
+      </div>
+    {% endif %}
+
+    <!-- ── Step 1: Choose how to list ── -->
+    <div class="sell-step">
+      <div class="sell-step-label">Step 1 — Choose your pigeon</div>
+      <div class="mode-cards">
+
+        <label class="mode-card {% if post_mode == 'existing' or not post_mode %}mode-card--active{% endif %}"
+               id="card-existing" for="mode-existing">
+          <input type="radio" id="mode-existing" name="__mode_picker" value="existing"
+                 {% if post_mode == 'existing' or not post_mode %}checked{% endif %}
+                 onchange="switchMode('existing')">
+          <div class="mc-icon">📋</div>
+          <div class="mc-body">
+            <div class="mc-title">Select from my flock</div>
+            <div class="mc-desc">Pick a pigeon you've already added to your profile</div>
+          </div>
+          <div class="mc-check">✓</div>
+        </label>
+
+        <label class="mode-card {% if post_mode == 'new' %}mode-card--active{% endif %}"
+               id="card-new" for="mode-new">
+          <input type="radio" id="mode-new" name="__mode_picker" value="new"
+                 {% if post_mode == 'new' %}checked{% endif %}
+                 onchange="switchMode('new')">
+          <div class="mc-icon">✨</div>
+          <div class="mc-body">
+            <div class="mc-title">List a new pigeon</div>
+            <div class="mc-desc">Fill in details now and list straight away</div>
+          </div>
+          <div class="mc-check">✓</div>
+        </label>
+
+      </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" id="sell-form">
+      {% csrf_token %}
+      <input type="hidden" name="mode" id="hidden-mode"
+             value="{{ post_mode|default:'existing' }}">
+
+      <!-- ══════════════════════════════════════════
+           TAB A — Select existing pigeon
+      ══════════════════════════════════════════ -->
+      <div id="tab-existing" class="sell-tab {% if post_mode == 'new' %}hidden{% endif %}">
+        <div class="sell-step">
+          <div class="sell-step-label">Your unlisted pigeons</div>
+
+          {% if user_pigeons %}
+            <input type="hidden" name="pigeon_id" id="pigeon-id-field" value="{{ request.POST.pigeon_id }}">
+
+            <div class="pigeon-picker-grid">
+              {% for pig in user_pigeons %}
+              <div class="picker-card {% if request.POST.pigeon_id == pig.pk|stringformat:'s' %}picker-card--selected{% endif %}"
+                   onclick="selectPigeon('{{ pig.pk }}', '{{ pig.name|escapejs }}', '{{ pig.breed.name|default:"Unknown Breed"|escapejs }}')">
+                <div class="picker-img">
+                  {% with img=pig.primary_image %}
+                    {% if img %}
+                      <img src="{{ img.image.url }}" alt="{{ pig.name }}">
+                    {% else %}
+                      <span class="picker-placeholder">🐦</span>
+                    {% endif %}
+                  {% endwith %}
+                </div>
+                <div class="picker-info">
+                  <div class="picker-name">{{ pig.name }}</div>
+                  <div class="picker-meta">
+                    {% if pig.breed %}{{ pig.breed.name }}{% else %}Unknown Breed{% endif %}
+                    · {{ pig.get_gender_display }}
+                    {% if pig.ring_number %} · <span style="color:#6b7280;">Ring: {{ pig.ring_number }}</span>{% endif %}
+                  </div>
+                </div>
+                <div class="picker-tick">✓</div>
+              </div>
+              {% endfor %}
+            </div>
+
+            <!-- auto-fill title hint -->
+            <p class="sel-hint" id="sel-hint" style="display:none;">
+              ✅ <strong id="sel-name"></strong> selected.
+              The listing title below has been pre-filled — feel free to edit it.
+            </p>
+
+          {% else %}
+            <div class="empty-flock">
+              <div style="font-size:48px;margin-bottom:12px;">🐦</div>
+              <h3>No pigeons in your profile yet</h3>
+              <p>Switch to "List a new pigeon" above to add one right now, or
+                 <a href="/pigeons/add/">add a pigeon to your profile first</a>.
+              </p>
+            </div>
           {% endif %}
-          <div class="form-help">
-            Don't see your pigeon?
-            <a href="/pigeons/add/" style="color:var(--primary);">Add one first →</a>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           TAB B — New pigeon inline form
+      ══════════════════════════════════════════ -->
+      <div id="tab-new" class="sell-tab {% if post_mode != 'new' %}hidden{% endif %}">
+        <div class="sell-step">
+          <div class="sell-step-label">Step 2 — Pigeon details</div>
+
+          <div class="new-pigeon-grid">
+
+            <!-- Photo uploads column -->
+            <div class="upload-column">
+
+              <div class="upload-box" id="main-upload-box">
+                <input type="file" name="pigeon_image" id="pigeon-img-input"
+                       accept="image/*" class="upload-input"
+                       onchange="previewImage(this,'main-preview','main-upload-box')">
+                <div class="upload-inner" id="main-upload-inner"
+                     onclick="document.getElementById('pigeon-img-input').click()">
+                  <div id="main-preview-wrap">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-label">Pigeon Photo</div>
+                    <div class="upload-hint">Click to upload · JPG/PNG</div>
+                  </div>
+                  <img id="main-preview" class="upload-preview hidden" alt="preview">
+                </div>
+              </div>
+
+              <div class="upload-box upload-box--sm" id="ped-upload-box">
+                <input type="file" name="pedigree_image_upload" id="ped-img-input"
+                       accept="image/*" class="upload-input"
+                       onchange="previewImage(this,'ped-preview','ped-upload-box')">
+                <div class="upload-inner" id="ped-upload-inner"
+                     onclick="document.getElementById('ped-img-input').click()">
+                  <div id="ped-preview-wrap">
+                    <div class="upload-icon">🏅</div>
+                    <div class="upload-label">Pedigree Photo <span class="opt-tag">optional</span></div>
+                    <div class="upload-hint">Certificate or family tree chart</div>
+                  </div>
+                  <img id="ped-preview" class="upload-preview hidden" alt="pedigree preview">
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Fields column -->
+            <div class="fields-column">
+
+              <!-- Name + Ring Number -->
+              <div class="fg-row">
+                <div class="form-group">
+                  <label>Pigeon Name <span class="req">*</span></label>
+                  <input type="text" name="name"
+                         value="{{ pigeon_form.name.value|default:'' }}"
+                         placeholder="e.g. King Blue"
+                         oninput="autofillTitle(this.value)"
+                         required {% if post_mode != 'new' %}disabled{% endif %}>
+                  {% if pigeon_form.name.errors %}
+                    <div class="form-error">{{ pigeon_form.name.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                  <label>Ring Number <span class="opt-tag">optional</span></label>
+                  <input type="text" name="ring_number"
+                         value="{{ pigeon_form.ring_number.value|default:'' }}"
+                         placeholder="e.g. BD-2024-001"
+                         {% if post_mode != 'new' %}disabled{% endif %}>
+                  {% if pigeon_form.ring_number.errors %}
+                    <div class="form-error">{{ pigeon_form.ring_number.errors.0 }}</div>{% endif %}
+                </div>
+              </div>
+
+              <!-- Breed + Gender -->
+              <div class="fg-row">
+                <div class="form-group">
+                  <label>Breed <span class="opt-tag">optional</span></label>
+                  <select name="breed" {% if post_mode != 'new' %}disabled{% endif %}>
+                    <option value="">— Select breed —</option>
+                    {% for breed in breeds %}
+                      <option value="{{ breed.pk }}"
+                        {% if pigeon_form.breed.value|stringformat:'s' == breed.pk|stringformat:'s' %}selected{% endif %}>
+                        {{ breed.name }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                  {% if pigeon_form.breed.errors %}
+                    <div class="form-error">{{ pigeon_form.breed.errors.0 }}</div>{% endif %}
+                </div>
+                <div class="form-group">
+                  <label>Gender <span class="req">*</span></label>
+                  <select name="gender" required {% if post_mode != 'new' %}disabled{% endif %}>
+                    {% for val, label in pigeon_form.fields.gender.choices %}
+                      <option value="{{ val }}"
+                        {% if pigeon_form.gender.value == val %}selected{% endif %}>
+                        {{ label }}
+                      </option>
+                    {% endfor %}
+                  </select>
+                </div>
+              </div>
+
+              <!-- Color -->
+              <div class="form-group">
+                <label>Color</label>
+                <div class="color-picker">
+                  {% for val, label in pigeon_form.fields.color.choices %}
+                  <label class="color-chip">
+                    <input type="radio" name="color" value="{{ val }}"
+                           {% if pigeon_form.color.value == val or not pigeon_form.color.value and val == 'blue' %}checked{% endif %}
+                           {% if post_mode != 'new' %}disabled{% endif %}>
+                    <span class="color-chip-label color-{{ val }}">{{ label }}</span>
+                  </label>
+                  {% endfor %}
+                </div>
+              </div>
+
+              <!-- Description -->
+              <div class="form-group">
+                <label>About this pigeon <span class="opt-tag">optional</span></label>
+                <textarea name="description" rows="3"
+                          placeholder="Health, achievements, lineage, training history..."
+                          {% if post_mode != 'new' %}disabled{% endif %}>{{ pigeon_form.description.value|default:'' }}</textarea>
+              </div>
+
+            </div>
           </div>
         </div>
+      </div>
+
+      <!-- ══════════════════════════════════════════
+           STEP 3 — Listing details (always shown)
+      ══════════════════════════════════════════ -->
+      <div class="sell-step">
+        <div class="sell-step-label">Step {% if user_pigeons %}3{% else %}2{% endif %} — Listing details</div>
 
         <!-- Title -->
         <div class="form-group">
-          <label>Listing Title <span style="color:#ef4444;">*</span></label>
-          <input type="text" name="title"
-                 value="{{ form.title.value|default:'' }}"
-                 placeholder="e.g. Champion Racing Homer for Sale" required>
-          {% if form.title.errors %}
-            <div class="form-error">{{ form.title.errors.0 }}</div>
-          {% endif %}
+          <label>Listing Title <span class="req">*</span></label>
+          <input type="text" name="title" id="listing-title"
+                 value="{{ listing_form.title.value|default:'' }}"
+                 placeholder="e.g. Champion Homer Pigeon for Sale — Dhaka"
+                 required maxlength="200">
+          {% if listing_form.title.errors %}
+            <div class="form-error">{{ listing_form.title.errors.0 }}</div>{% endif %}
+          <div class="form-help">A clear title gets more views. Include breed and location.</div>
         </div>
 
-        <!-- Description -->
-        <div class="form-group">
-          <label>Description <span style="color:#ef4444;">*</span></label>
-          <textarea name="description" rows="4" required
-                    placeholder="Describe the pigeon, its history, health...">{{ form.description.value|default:'' }}</textarea>
-          {% if form.description.errors %}
-            <div class="form-error">{{ form.description.errors.0 }}</div>
-          {% endif %}
-        </div>
-
-        <!-- Price + Location row -->
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <!-- Price + Location -->
+        <div class="fg-row">
           <div class="form-group">
-            <label>Price (BDT) <span style="color:#ef4444;">*</span></label>
-            <input type="number" name="price" step="0.01" min="0"
-                   value="{{ form.price.value|default:'' }}"
-                   placeholder="0.00" required>
-            {% if form.price.errors %}
-              <div class="form-error">{{ form.price.errors.0 }}</div>
-            {% endif %}
+            <label>Price (BDT) <span class="req">*</span></label>
+            <div class="input-prefix-wrap">
+              <span class="input-prefix">৳</span>
+              <input type="number" name="price" step="1" min="0"
+                     value="{{ listing_form.price.value|default:'' }}"
+                     placeholder="5000" required>
+            </div>
+            {% if listing_form.price.errors %}
+              <div class="form-error">{{ listing_form.price.errors.0 }}</div>{% endif %}
           </div>
           <div class="form-group">
-            <label>Location <span style="color:#ef4444;">*</span></label>
+            <label>Your Location <span class="req">*</span></label>
             <input type="text" name="location"
-                   value="{{ form.location.value|default:'' }}"
-                   placeholder="e.g. London, UK" required>
-            {% if form.location.errors %}
-              <div class="form-error">{{ form.location.errors.0 }}</div>
-            {% endif %}
+                   value="{{ listing_form.location.value|default:'' }}"
+                   placeholder="e.g. Dhaka, Mirpur"
+                   required>
+            {% if listing_form.location.errors %}
+              <div class="form-error">{{ listing_form.location.errors.0 }}</div>{% endif %}
           </div>
         </div>
 
         <!-- Negotiable -->
         <div class="form-group">
-          <label style="display:flex;align-items:center;gap:10px;cursor:pointer;">
-            <input type="checkbox" name="is_negotiable"
-                   {% if form.is_negotiable.value %}checked{% endif %}
-                   style="width:16px;height:16px;">
+          <label class="toggle-label">
+            <input type="checkbox" name="is_negotiable" class="toggle-input"
+                   {% if listing_form.is_negotiable.value %}checked{% endif %}>
+            <span class="toggle-track"></span>
             <span>Price is negotiable</span>
           </label>
         </div>
 
-        <!-- Submit -->
-        <div style="display:flex;gap:12px;margin-top:8px;">
-          <button type="submit" class="btn-primary"
-                  style="flex:1;padding:12px;font-size:15px;">
-            Publish Listing
-          </button>
-          <a href="/marketplace/" class="btn-outline"
-             style="padding:12px 20px;">Cancel</a>
+        <!-- Listing description -->
+        <div class="form-group">
+          <label>Listing Description <span class="req">*</span></label>
+          <textarea name="description" rows="4" required
+                    placeholder="Add any extra info: health records, diet, delivery options, why you're selling...">{{ listing_form.description.value|default:'' }}</textarea>
+          {% if listing_form.description.errors %}
+            <div class="form-error">{{ listing_form.description.errors.0 }}</div>{% endif %}
         </div>
-      </form>
-    </div>
+
+        <!-- Submit -->
+        <div class="sell-actions">
+          <button type="submit" class="sell-submit-btn">
+            🚀 Publish Listing — It's Free!
+          </button>
+          <a href="/marketplace/" class="sell-cancel-link">Cancel</a>
+        </div>
+
+      </div>
+    </form>
+
   </div>
 </div>
+
+<style>
+/* ── Sell Page Layout ── */
+.sell-page { padding: 40px 0 80px; }
+.sell-header { text-align: center; margin-bottom: 36px; }
+.sell-header h1 { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+.sell-header p  { color: var(--text-muted); font-size: 15px; }
+.sell-alert { background: #fee2e2; color: #991b1b; padding: 12px 16px;
+              border-radius: var(--radius); margin-bottom: 20px; font-size: 14px; }
+
+.sell-step { background: var(--surface); border: 1px solid var(--border);
+             border-radius: 14px; padding: 28px; margin-bottom: 20px; }
+.sell-step-label { font-size: 11px; font-weight: 700; letter-spacing: 1px;
+                   text-transform: uppercase; color: var(--text-muted); margin-bottom: 18px; }
+
+/* ── Mode cards ── */
+.mode-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.mode-card {
+  display: flex; align-items: center; gap: 16px;
+  border: 2px solid var(--border); border-radius: 12px;
+  padding: 18px 20px; cursor: pointer; transition: border-color .15s, background .15s;
+  position: relative;
+}
+.mode-card input[type=radio] { position: absolute; opacity: 0; pointer-events: none; }
+.mode-card--active { border-color: var(--primary); background: #fff7ed; }
+.mc-icon { font-size: 28px; flex-shrink: 0; }
+.mc-body { flex: 1; }
+.mc-title { font-weight: 700; font-size: 15px; margin-bottom: 2px; }
+.mc-desc  { font-size: 13px; color: var(--text-muted); }
+.mc-check { width: 22px; height: 22px; border-radius: 50%;
+            background: var(--border); color: transparent; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .15s; flex-shrink: 0; }
+.mode-card--active .mc-check { background: var(--primary); color: white; }
+
+/* ── Pigeon picker ── */
+.pigeon-picker-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                      gap: 12px; margin-bottom: 12px; }
+.picker-card { display: flex; align-items: center; gap: 12px;
+               border: 2px solid var(--border); border-radius: 10px;
+               padding: 12px 14px; cursor: pointer;
+               transition: border-color .15s, background .15s; position: relative; }
+.picker-card:hover { border-color: #fdba74; background: #fff7ed; }
+.picker-card--selected { border-color: var(--primary); background: #fff7ed; }
+.picker-img { width: 52px; height: 52px; border-radius: 8px; overflow: hidden;
+              flex-shrink: 0; background: #e5e7eb;
+              display: flex; align-items: center; justify-content: center; }
+.picker-img img { width: 100%; height: 100%; object-fit: cover; }
+.picker-placeholder { font-size: 26px; }
+.picker-info { flex: 1; min-width: 0; }
+.picker-name { font-weight: 700; font-size: 14px; white-space: nowrap;
+               overflow: hidden; text-overflow: ellipsis; }
+.picker-meta { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.picker-tick { width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border);
+               display: flex; align-items: center; justify-content: center;
+               font-size: 11px; color: transparent; flex-shrink: 0; transition: all .15s; }
+.picker-card--selected .picker-tick { background: var(--primary); border-color: var(--primary);
+                                       color: white; }
+.sel-hint { font-size: 14px; color: #065f46; background: #d1fae5;
+            padding: 10px 14px; border-radius: 8px; margin-top: 4px; }
+.empty-flock { text-align: center; padding: 40px; color: var(--text-muted);
+               border: 2px dashed var(--border); border-radius: 12px; }
+.empty-flock h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; color: var(--text); }
+.empty-flock a  { color: var(--primary); }
+
+/* ── New pigeon grid ── */
+.new-pigeon-grid { display: grid; grid-template-columns: 220px 1fr; gap: 24px; }
+.upload-column { display: flex; flex-direction: column; gap: 12px; }
+.upload-box { border: 2px dashed var(--border); border-radius: 12px; overflow: hidden;
+              cursor: pointer; transition: border-color .15s; }
+.upload-box:hover { border-color: var(--primary); }
+.upload-inner { padding: 20px; text-align: center; }
+.upload-box--sm .upload-inner { padding: 14px; }
+.upload-icon  { font-size: 32px; margin-bottom: 6px; }
+.upload-box--sm .upload-icon { font-size: 22px; }
+.upload-label { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.upload-hint  { font-size: 12px; color: var(--text-muted); }
+.upload-input { display: none; }
+.upload-preview { width: 100%; height: 160px; object-fit: cover; display: block; }
+.upload-box--sm .upload-preview { height: 100px; }
+.hidden { display: none !important; }
+
+/* ── Color picker ── */
+.color-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.color-chip input { display: none; }
+.color-chip-label { display: inline-block; padding: 5px 14px; border-radius: 999px;
+                    border: 2px solid var(--border); font-size: 13px; cursor: pointer;
+                    transition: all .15s; }
+.color-chip input:checked + .color-chip-label { border-color: var(--primary);
+                                                 background: var(--primary); color: white; }
+.color-blue   { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+.color-red    { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.color-white  { background: #f9fafb; color: #374151; border-color: #d1d5db; }
+.color-black  { background: #1f2937; color: #fff; border-color: #374151; }
+.color-silver { background: #e5e7eb; color: #374151; border-color: #9ca3af; }
+.color-other  { background: #fef3c7; color: #92400e; border-color: #fcd34d; }
+.color-chip input:checked + .color-chip-label.color-blue,
+.color-chip input:checked + .color-chip-label.color-red,
+.color-chip input:checked + .color-chip-label.color-white,
+.color-chip input:checked + .color-chip-label.color-black,
+.color-chip input:checked + .color-chip-label.color-silver,
+.color-chip input:checked + .color-chip-label.color-other {
+  border-color: var(--primary); outline: 2px solid var(--primary); outline-offset: 2px;
+}
+
+/* ── Price input ── */
+.input-prefix-wrap { display: flex; }
+.input-prefix { background: var(--bg); border: 1px solid var(--border);
+                border-right: none; border-radius: var(--radius) 0 0 var(--radius);
+                padding: 10px 12px; font-size: 15px; color: var(--text-muted);
+                display: flex; align-items: center; }
+.input-prefix-wrap input { border-radius: 0 var(--radius) var(--radius) 0 !important; flex: 1; }
+
+/* ── Toggle checkbox ── */
+.toggle-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
+.toggle-input { display: none; }
+.toggle-track { width: 40px; height: 22px; background: var(--border); border-radius: 999px;
+                position: relative; transition: background .2s; flex-shrink: 0; }
+.toggle-track::after { content: ''; position: absolute; left: 2px; top: 2px;
+                       width: 18px; height: 18px; background: white; border-radius: 50%;
+                       transition: transform .2s; }
+.toggle-input:checked ~ .toggle-track { background: var(--primary); }
+.toggle-input:checked ~ .toggle-track::after { transform: translateX(18px); }
+
+/* ── Row layout ── */
+.fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* ── Tags ── */
+.req { color: #ef4444; }
+.opt-tag { font-size: 11px; font-weight: 500; color: var(--text-muted);
+           background: var(--bg); border: 1px solid var(--border);
+           padding: 1px 6px; border-radius: 4px; margin-left: 4px; }
+
+/* ── Submit ── */
+.sell-actions { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+.sell-submit-btn { background: var(--primary); color: white; border: none;
+                   padding: 14px 36px; border-radius: var(--radius);
+                   font-size: 16px; font-weight: 700; cursor: pointer;
+                   transition: background .15s, transform .12s;
+                   box-shadow: 0 4px 14px rgba(234,88,12,.3); }
+.sell-submit-btn:hover { background: var(--primary-dark); transform: translateY(-1px); }
+.sell-cancel-link { color: var(--text-muted); font-size: 14px; text-decoration: none; }
+.sell-cancel-link:hover { color: var(--text); }
+
+/* ── Tabs ── */
+.sell-tab.hidden { display: none; }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .mode-cards { grid-template-columns: 1fr; }
+  .new-pigeon-grid { grid-template-columns: 1fr; }
+  .fg-row { grid-template-columns: 1fr; }
+  .upload-column { flex-direction: row; }
+  .upload-box { flex: 1; }
+}
+</style>
+
+<script>
+function switchMode(mode) {
+  document.getElementById('hidden-mode').value = mode;
+
+  const existingTab = document.getElementById('tab-existing');
+  const newTab      = document.getElementById('tab-new');
+  const cardExisting = document.getElementById('card-existing');
+  const cardNew      = document.getElementById('card-new');
+
+  if (mode === 'existing') {
+    existingTab.classList.remove('hidden');
+    newTab.classList.add('hidden');
+    cardExisting.classList.add('mode-card--active');
+    cardNew.classList.remove('mode-card--active');
+    // disable new pigeon fields so they don't validate
+    setNewPigeonFields(true);
+  } else {
+    newTab.classList.remove('hidden');
+    existingTab.classList.add('hidden');
+    cardNew.classList.add('mode-card--active');
+    cardExisting.classList.remove('mode-card--active');
+    setNewPigeonFields(false);
+  }
+}
+
+function setNewPigeonFields(disabled) {
+  document.querySelectorAll('#tab-new input, #tab-new select, #tab-new textarea')
+    .forEach(el => el.disabled = disabled);
+}
+
+function selectPigeon(pk, name, breed) {
+  document.getElementById('pigeon-id-field').value = pk;
+  // update title field with a suggestion
+  const titleInput = document.getElementById('listing-title');
+  if (!titleInput.value || titleInput.dataset.autoset === '1') {
+    titleInput.value = name + ' — ' + breed + ' for Sale';
+    titleInput.dataset.autoset = '1';
+  }
+  // update selection UI
+  document.querySelectorAll('.picker-card').forEach(c => c.classList.remove('picker-card--selected'));
+  event.currentTarget.classList.add('picker-card--selected');
+  // show hint
+  const hint = document.getElementById('sel-hint');
+  if (hint) {
+    hint.style.display = 'block';
+    document.getElementById('sel-name').textContent = name;
+  }
+}
+
+function autofillTitle(pigeonName) {
+  const titleInput = document.getElementById('listing-title');
+  if (!titleInput.value || titleInput.dataset.autoset === '1') {
+    titleInput.value = pigeonName ? pigeonName + ' for Sale' : '';
+    titleInput.dataset.autoset = '1';
+  }
+}
+
+// Allow user to override auto-fill
+document.getElementById('listing-title').addEventListener('input', function() {
+  this.dataset.autoset = '0';
+});
+
+function previewImage(input, previewId, boxId) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = document.getElementById(previewId);
+    const box = document.getElementById(boxId);
+    // hide upload placeholder text
+    const wrapId = previewId === 'main-preview' ? 'main-preview-wrap' : 'ped-preview-wrap';
+    document.getElementById(wrapId).style.display = 'none';
+    preview.src = e.target.result;
+    preview.classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+// Init: enable/disable fields based on current mode
+(function() {
+  const mode = document.getElementById('hidden-mode').value;
+  if (mode !== 'new') setNewPigeonFields(true);
+})();
+</script>
+
 {% endblock %}

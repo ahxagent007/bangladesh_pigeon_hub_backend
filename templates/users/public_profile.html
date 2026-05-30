@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% block title %}{{ profile_user.username }} — BPH{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:36px;padding-bottom:60px;">
+
+  <!-- Profile Header -->
+  <div class="pp-header">
+    <div class="pp-avatar-wrap">
+      {% if profile_user.avatar %}
+        <img src="{{ profile_user.avatar.url }}" class="pp-avatar" alt="">
+      {% else %}
+        <div class="pp-avatar pp-avatar-ph">{{ profile_user.username|first|upper }}</div>
+      {% endif %}
+      {% if profile_user.is_verified %}<span class="pp-verified">✓</span>{% endif %}
+    </div>
+    <div class="pp-info">
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <h1 class="pp-name">{{ profile_user.full_name }}</h1>
+        {% if profile_user.is_verified %}<span class="pp-badge-verified">✓ Verified</span>{% endif %}
+      </div>
+      <div class="pp-username">@{{ profile_user.username }}</div>
+      {% if profile_user.bio %}<div class="pp-bio">{{ profile_user.bio }}</div>{% endif %}
+      <div class="pp-meta-row">
+        {% if profile_user.location %}<span>📍 {{ profile_user.location }}</span>{% endif %}
+        <span>📅 Joined {{ profile_user.created_at|date:"M Y" }}</span>
+      </div>
+      <!-- Stats -->
+      <div class="pp-stats">
+        <div class="pp-stat"><span class="pp-stat-n">{{ profile_user.follower_count }}</span><span class="pp-stat-l">Followers</span></div>
+        <div class="pp-stat"><span class="pp-stat-n">{{ profile_user.following_count }}</span><span class="pp-stat-l">Following</span></div>
+        <div class="pp-stat"><span class="pp-stat-n">{{ listings|length }}+</span><span class="pp-stat-l">Listings</span></div>
+        {% if avg_rating %}
+        <div class="pp-stat">
+          <span class="pp-stat-n">{{ avg_rating }}★</span>
+          <span class="pp-stat-l">({{ profile_user.received_reviews.count }} reviews)</span>
+        </div>
+        {% endif %}
+      </div>
+      <!-- Actions -->
+      <div class="pp-actions">
+        {% if user.is_authenticated and user != profile_user %}
+          <button class="follow-btn {% if is_following %}follow-btn--following{% endif %}"
+                  id="follow-btn"
+                  onclick="toggleFollow('{{ profile_user.username }}')">
+            {% if is_following %}✓ Following{% else %}+ Follow{% endif %}
+          </button>
+          <a href="/messages/" class="btn-outline btn-sm">💬 Message</a>
+          <a href="/users/{{ profile_user.username }}/review/" class="btn-outline btn-sm">⭐ Review</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="pp-grid">
+
+    <!-- Left: Listings + Posts -->
+    <div>
+      <!-- Active Listings -->
+      {% if listings %}
+      <div class="pp-section">
+        <h2 class="pp-section-title">🛒 Active Listings</h2>
+        <div class="pigeon-grid">
+          {% for listing in listings %}
+          <a href="/marketplace/{{ listing.pk }}/" class="pigeon-card-link">
+            <div class="pigeon-card-v2">
+              {% with img=listing.pigeon.primary_image %}
+              <div class="pcv2-img-wrap {% if not img %}pcv2-placeholder{% endif %}">
+                {% if img %}<img src="{{ img.image.url }}" alt="">{% else %}<span>🐦</span>{% endif %}
+                <div class="pcv2-sale-badge">FOR SALE</div>
+              </div>
+              {% endwith %}
+              <div class="pcv2-body">
+                <div class="pcv2-name">{{ listing.pigeon.name }}</div>
+                <div class="pcv2-price">BDT {{ listing.price }}</div>
+                <div class="pcv2-footer"><span>📍 {{ listing.location }}</span></div>
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Won Auctions -->
+      {% if won_auctions %}
+      <div class="pp-section">
+        <h2 class="pp-section-title">🏆 Won at Auction</h2>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+          {% for auc in won_auctions %}
+          <a href="/auctions/{{ auc.pk }}/" style="text-decoration:none;color:inherit;">
+            <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;background:var(--bg);">
+              {% with cover=auc.get_cover_image %}
+              <div style="height:90px;background:#f3f4f6;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:28px;">
+                {% if cover %}<img src="{{ cover }}" style="width:100%;height:100%;object-fit:cover;" alt="">
+                {% else %}🐦{% endif %}
+              </div>
+              {% endwith %}
+              <div style="padding:8px 10px;">
+                <div style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ auc.title }}</div>
+                <div style="font-size:12px;color:var(--primary);font-weight:700;">BDT {{ auc.display_price|floatformat:"0" }}</div>
+              </div>
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Wall Posts -->
+      {% if posts %}
+      <div class="pp-section">
+        <h2 class="pp-section-title">🐦 Wall Posts</h2>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+          {% for post in posts %}
+          <a href="/wall/#post-{{ post.pk }}" style="display:block;aspect-ratio:1;border-radius:8px;overflow:hidden;background:#e5e7eb;">
+            {% with img=post.images.first %}
+              {% if img %}<img src="{{ img.image.url }}" style="width:100%;height:100%;object-fit:cover;" alt="">
+              {% else %}<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;background:linear-gradient(135deg,#ffedd5,#fef3c7);">🐦</div>{% endif %}
+            {% endwith %}
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right: Reviews -->
+    <div>
+      <div class="pp-section">
+        <h2 class="pp-section-title">⭐ Reviews</h2>
+        {% if reviews %}
+          {% for r in reviews %}
+          <div class="review-card">
+            <div class="review-header">
+              <div class="review-stars">{% for i in "12345" %}{% if forloop.counter <= r.rating %}★{% else %}☆{% endif %}{% endfor %}</div>
+              <div style="font-size:12px;color:var(--text-muted);">{{ r.created_at|timesince }} ago</div>
+            </div>
+            <div class="review-text">{{ r.comment }}</div>
+            <div class="review-by">— {{ r.reviewer.username }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="color:var(--text-muted);font-size:14px;padding:20px 0;">No reviews yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.pp-header { display:flex;gap:28px;align-items:flex-start;margin-bottom:36px;flex-wrap:wrap; }
+.pp-avatar-wrap { position:relative;flex-shrink:0; }
+.pp-avatar { width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--primary); }
+.pp-avatar-ph { width:100px;height:100px;border-radius:50%;background:var(--primary);color:white;display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700; }
+.pp-verified { position:absolute;bottom:4px;right:4px;background:var(--primary);color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700; }
+.pp-info { flex:1; }
+.pp-name { font-size:24px;font-weight:800; }
+.pp-username { color:var(--text-muted);font-size:14px;margin-bottom:6px; }
+.pp-bio { font-size:14px;margin-bottom:8px;line-height:1.6; }
+.pp-meta-row { display:flex;gap:16px;font-size:13px;color:var(--text-muted);margin-bottom:12px;flex-wrap:wrap; }
+.pp-stats { display:flex;gap:20px;margin-bottom:16px;flex-wrap:wrap; }
+.pp-stat { display:flex;flex-direction:column;align-items:center; }
+.pp-stat-n { font-size:18px;font-weight:700; }
+.pp-stat-l { font-size:11px;color:var(--text-muted); }
+.pp-actions { display:flex;gap:8px;flex-wrap:wrap; }
+.pp-badge-verified { background:#d1fae5;color:#065f46;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:700; }
+.follow-btn { background:var(--primary);color:white;border:none;padding:8px 20px;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;transition:all .15s; }
+.follow-btn--following { background:var(--bg);color:var(--text);border:1px solid var(--border); }
+.pp-grid { display:grid;grid-template-columns:1fr 320px;gap:28px;align-items:start; }
+.pp-section { background:white;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px; }
+.pp-section-title { font-size:16px;font-weight:700;margin-bottom:14px; }
+.review-card { border-bottom:1px solid var(--border);padding:12px 0; }
+.review-card:last-child { border-bottom:none; }
+.review-header { display:flex;justify-content:space-between;margin-bottom:6px; }
+.review-stars { color:#f59e0b;font-size:16px; }
+.review-text { font-size:14px;line-height:1.6;margin-bottom:4px; }
+.review-by { font-size:12px;color:var(--text-muted);font-style:italic; }
+@media(max-width:768px){ .pp-grid{grid-template-columns:1fr;} }
+</style>
+<script>
+async function toggleFollow(username) {
+  const btn = document.getElementById('follow-btn');
+  const csrf = document.cookie.match(/csrftoken=([^;]+)/)?.[1]||'';
+  const res = await fetch(`/users/${username}/follow/`, {method:'POST',headers:{'X-CSRFToken':csrf}});
+  const d = await res.json();
+  if (d.following) {
+    btn.textContent = '✓ Following';
+    btn.classList.add('follow-btn--following');
+  } else {
+    btn.textContent = '+ Follow';
+    btn.classList.remove('follow-btn--following');
+  }
+}
+</script>
+{% endblock %}

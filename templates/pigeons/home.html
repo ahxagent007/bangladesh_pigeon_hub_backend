@@ -1,98 +1,256 @@
 {% extends 'base.html' %}
-{% block title %}BPH — Buy & Sell Pigeons{% endblock %}
+{% block title %}BPH — Buy & Sell Pigeons in Bangladesh{% endblock %}
 {% block content %}
 
-<!-- Hero -->
-<div class="hero">
+<!-- ── Hero ── -->
+<div class="hero-v2">
+  <div class="hero-bg-pattern">
+    <span class="float-bird fb1">🕊️</span>
+    <span class="float-bird fb2">🐦</span>
+    <span class="float-bird fb3">🕊️</span>
+    <span class="float-bird fb4">🐦</span>
+    <span class="float-bird fb5">🕊️</span>
+  </div>
+
   <div class="container">
-    <h1>🐦 Find Your Perfect Pigeon</h1>
-    <p>The largest pigeon marketplace. Buy, sell, and manage your flock.</p>
-    <form action="/marketplace/" method="get" class="hero-search">
-      <input type="text" name="q" placeholder="Search by breed, location...">
-      <button type="submit">Search</button>
-    </form>
-    <div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
-      <a href="/marketplace/" style="color:#fff;opacity:.85;font-size:14px;
-         border:1px solid rgba(255,255,255,.4);padding:6px 16px;border-radius:999px;">
-        Browse All
-      </a>
-      {% for breed in breeds|slice:":5" %}
-        <a href="/marketplace/?breed={{ breed.id }}"
-           style="color:#fff;opacity:.85;font-size:14px;
-                  border:1px solid rgba(255,255,255,.4);
-                  padding:6px 16px;border-radius:999px;">
-          {{ breed.name }}
-        </a>
-      {% endfor %}
+    <div class="hero-inner">
+
+      <!-- Left: Text + CTAs -->
+      <div class="hero-text">
+        <div class="hero-badge">🇧🇩 Bangladesh's #1 Pigeon Marketplace</div>
+        <h1>Buy &amp; Sell<br>Premium Pigeons</h1>
+        <p>Connect with thousands of pigeon enthusiasts across Bangladesh. List your birds in minutes — completely free.</p>
+
+        <div class="hero-ctas">
+          {% if not user.is_authenticated %}
+            <a href="/auth/register/" class="hero-btn-sell">🐦 Start Selling Free</a>
+          {% else %}
+            <a href="/marketplace/add/" class="hero-btn-sell">🐦 List a Pigeon</a>
+          {% endif %}
+          <a href="/marketplace/" class="hero-btn-browse">Browse Pigeons →</a>
+        </div>
+
+        <div class="hero-trust-row">
+          <span>✅ Free to join</span>
+          <span>✅ No commission</span>
+          <span>✅ Sell in minutes</span>
+        </div>
+
+        <form action="/marketplace/" method="get" class="hero-search-v2">
+          <input type="text" name="q" placeholder="Search by breed, location, price...">
+          <button type="submit">Search</button>
+        </form>
+
+        <div class="hero-breed-chips">
+          <a href="/marketplace/" class="hchip">All Breeds</a>
+          {% for breed in breeds|slice:":5" %}
+            <a href="/marketplace/?breed={{ breed.id }}" class="hchip">{{ breed.name }}</a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Right: Pigeon Showcase -->
+      <div class="hero-visual">
+        <div class="hv-main-card">
+          <div class="hv-img-area">
+            <svg viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg" class="hero-pigeon-svg">
+              <!-- Sky / gradient bg -->
+              <defs>
+                <radialGradient id="bg" cx="50%" cy="60%" r="60%">
+                  <stop offset="0%" stop-color="#bfdbfe"/>
+                  <stop offset="100%" stop-color="#93c5fd"/>
+                </radialGradient>
+              </defs>
+              <rect width="260" height="200" rx="12" fill="url(#bg)"/>
+              <!-- Sun -->
+              <circle cx="200" cy="40" r="28" fill="#fde68a" opacity=".7"/>
+              <!-- Clouds -->
+              <ellipse cx="60" cy="35" rx="35" ry="16" fill="white" opacity=".7"/>
+              <ellipse cx="85" cy="28" rx="25" ry="14" fill="white" opacity=".8"/>
+              <!-- Ground -->
+              <ellipse cx="130" cy="195" rx="110" ry="30" fill="#bbf7d0" opacity=".6"/>
+              <!-- Pigeon body -->
+              <ellipse cx="130" cy="130" rx="52" ry="32" fill="#f8fafc"/>
+              <!-- Wing left (up) -->
+              <ellipse cx="100" cy="108" rx="50" ry="22" fill="#e2e8f0" transform="rotate(-25 100 108)"/>
+              <!-- Wing right (down) -->
+              <ellipse cx="152" cy="140" rx="45" ry="18" fill="#cbd5e1" transform="rotate(20 152 140)"/>
+              <!-- Tail feathers -->
+              <polygon points="82,132 52,118 50,148 78,142" fill="#e2e8f0"/>
+              <polygon points="80,138 48,130 50,155 80,148" fill="#f1f5f9"/>
+              <!-- Head -->
+              <circle cx="172" cy="102" r="24" fill="#f8fafc"/>
+              <!-- Neck highlight -->
+              <ellipse cx="158" cy="118" rx="16" ry="12" fill="#dbeafe" opacity=".5"/>
+              <!-- Beak -->
+              <polygon points="193,96 216,104 193,113" fill="#fbbf24"/>
+              <!-- Nostril -->
+              <ellipse cx="200" cy="104" rx="6" ry="3" fill="#f59e0b" opacity=".7"/>
+              <!-- Eye -->
+              <circle cx="181" cy="97" r="7" fill="#dc2626"/>
+              <circle cx="182" cy="96" r="3" fill="#1e1e1e"/>
+              <circle cx="183" cy="95" r="1.2" fill="white"/>
+              <!-- Feet -->
+              <line x1="138" y1="158" x2="132" y2="180" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+              <line x1="148" y1="160" x2="155" y2="180" stroke="#fbbf24" stroke-width="3" stroke-linecap="round"/>
+              <line x1="132" y1="180" x2="120" y2="188" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="132" y1="180" x2="133" y2="190" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="132" y1="180" x2="144" y2="187" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="155" y1="180" x2="143" y2="189" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="155" y1="180" x2="157" y2="191" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+              <line x1="155" y1="180" x2="167" y2="187" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round"/>
+              <!-- Small flying birds in BG -->
+              <text x="25" y="70" font-size="16" opacity=".4">🕊️</text>
+              <text x="200" y="60" font-size="12" opacity=".35">🐦</text>
+            </svg>
+          </div>
+          <div class="hv-card-body">
+            <span class="hv-badge">⭐ Featured</span>
+            <div class="hv-name">Champion Racer</div>
+            <div class="hv-meta">King Pigeon · Male · 2 yrs</div>
+            <div class="hv-price">BDT 25,000</div>
+            <div class="hv-loc">📍 Dhaka, BD</div>
+          </div>
+        </div>
+
+        <!-- Floating mini cards -->
+        <div class="hv-mini-card hv-m1">
+          <span style="font-size:26px;">🕊️</span>
+          <div>
+            <div style="font-weight:700;font-size:13px;">White Beauty</div>
+            <div style="color:#2563eb;font-size:12px;font-weight:600;">BDT 8,000</div>
+          </div>
+        </div>
+        <div class="hv-mini-card hv-m2">
+          <span style="font-size:26px;">🐦</span>
+          <div>
+            <div style="font-weight:700;font-size:13px;">Homer Pair</div>
+            <div style="color:#2563eb;font-size:12px;font-weight:600;">BDT 12,000</div>
+          </div>
+        </div>
+        <div class="hv-stat-bubble">
+          <div style="font-size:20px;font-weight:800;color:#2563eb;">500+</div>
+          <div style="font-size:11px;color:#6b7280;">Happy Sellers</div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<!-- Stats Bar -->
-<div style="background:#1e40af;color:#fff;padding:16px 0;">
-  <div class="container" style="display:flex;justify-content:center;
-       gap:48px;flex-wrap:wrap;text-align:center;">
-    <div>
-      <div style="font-size:22px;font-weight:700;">{{ featured|length }}+</div>
-      <div style="font-size:13px;opacity:.8;">Active Listings</div>
-    </div>
-    <div>
-      <div style="font-size:22px;font-weight:700;">{{ breeds|length }}</div>
-      <div style="font-size:13px;opacity:.8;">Breeds</div>
-    </div>
-    <div>
-      <div style="font-size:22px;font-weight:700;">100%</div>
-      <div style="font-size:13px;opacity:.8;">Free to Join</div>
+<!-- ── Stats Bar ── -->
+<div class="stats-bar">
+  <div class="container">
+    <div class="stats-inner">
+      <div class="stat-item">
+        <div class="stat-icon">🐦</div>
+        <div class="stat-num">{{ featured|length }}+</div>
+        <div class="stat-lbl">Active Listings</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <div class="stat-icon">🏷️</div>
+        <div class="stat-num">{{ breeds|length }}+</div>
+        <div class="stat-lbl">Pigeon Breeds</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <div class="stat-icon">👥</div>
+        <div class="stat-num">500+</div>
+        <div class="stat-lbl">Registered Sellers</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <div class="stat-icon">💰</div>
+        <div class="stat-num">0%</div>
+        <div class="stat-lbl">Commission Fee</div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- Featured Listings -->
+<!-- ── Sell Your Pigeons (Seller CTA) ── -->
+{% if not user.is_authenticated %}
+<div class="sell-cta-section">
+  <div class="container">
+    <div class="sell-cta-inner">
+      <div class="sell-cta-text">
+        <div class="sell-cta-tag">💸 For Pigeon Sellers</div>
+        <h2>Turn Your Flock Into Income</h2>
+        <p>Join thousands of Bangladeshi pigeon enthusiasts who sell on BPH. List your pigeons in under 5 minutes — no fees, no commissions, no hassle.</p>
+        <ul class="sell-benefits">
+          <li><span class="sb-icon">📸</span> Upload unlimited photos</li>
+          <li><span class="sb-icon">💬</span> Chat directly with buyers</li>
+          <li><span class="sb-icon">🌍</span> Reach buyers across Bangladesh</li>
+          <li><span class="sb-icon">🆓</span> 100% free — always</li>
+        </ul>
+        <a href="/auth/register/" class="sell-cta-btn">Create Free Account →</a>
+      </div>
+      <div class="sell-cta-visual">
+        <div class="scv-card">
+          <div style="font-size:56px;margin-bottom:12px;">🐦</div>
+          <div style="font-weight:700;font-size:18px;margin-bottom:4px;">List in Minutes</div>
+          <div style="color:#6b7280;font-size:14px;margin-bottom:20px;">Add your pigeon and start getting offers today</div>
+          <div class="scv-steps">
+            <div class="scv-step"><span class="scv-num">1</span> Sign up free</div>
+            <div class="scv-arrow">→</div>
+            <div class="scv-step"><span class="scv-num">2</span> Add pigeon</div>
+            <div class="scv-arrow">→</div>
+            <div class="scv-step"><span class="scv-num">3</span> Get offers!</div>
+          </div>
+        </div>
+        <!-- Decorative pigeon silhouettes -->
+        <div class="scv-deco-birds">
+          <span style="font-size:28px;opacity:.15;position:absolute;top:10px;right:10px;">🕊️</span>
+          <span style="font-size:20px;opacity:.12;position:absolute;bottom:20px;left:15px;">🐦</span>
+          <span style="font-size:36px;opacity:.1;position:absolute;top:40%;right:-10px;">🕊️</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Featured Listings ── -->
 <div class="container section">
-  <div style="display:flex;justify-content:space-between;align-items:center;
-              margin-bottom:20px;">
-    <h2 class="section-title" style="margin:0;">Featured Pigeons</h2>
-    <a href="/marketplace/" style="color:var(--primary);font-size:14px;
-       text-decoration:none;">View all →</a>
+  <div class="section-header">
+    <div>
+      <h2 class="section-title" style="margin:0;">🌟 Featured Pigeons</h2>
+      <p style="color:var(--text-muted);font-size:14px;margin-top:4px;">Hand-picked top listings from verified sellers</p>
+    </div>
+    <a href="/marketplace/" class="see-all-link">View all listings →</a>
   </div>
 
   {% if featured %}
     <div class="pigeon-grid">
       {% for pigeon in featured %}
         {% if pigeon.listing %}
-        <a href="/marketplace/{{ pigeon.listing.id }}/"
-           style="text-decoration:none;color:inherit;">
-          <div class="card" style="overflow:hidden;transition:transform .15s,
-               box-shadow .15s;cursor:pointer;"
-               onmouseover="this.style.transform='translateY(-3px)';
-                            this.style.boxShadow='0 8px 24px rgba(0,0,0,.12)'"
-               onmouseout="this.style.transform='';this.style.boxShadow=''">
-
-            <!-- Image -->
+        <a href="/marketplace/{{ pigeon.listing.id }}/" class="pigeon-card-link">
+          <div class="pigeon-card-v2">
             {% with img=pigeon.primary_image %}
               {% if img %}
-                <img src="{{ img.image.url }}" class="card-img"
-                     alt="{{ pigeon.name }}"
-                     style="height:190px;object-fit:cover;">
+                <div class="pcv2-img-wrap">
+                  <img src="{{ img.image.url }}" alt="{{ pigeon.name }}">
+                  <div class="pcv2-sale-badge">FOR SALE</div>
+                </div>
               {% else %}
-                <div class="card-img" style="height:190px;background:#e5e7eb;
-                     display:flex;align-items:center;justify-content:center;
-                     font-size:52px;">🐦</div>
+                <div class="pcv2-img-wrap pcv2-placeholder">
+                  <span>🐦</span>
+                  <div class="pcv2-sale-badge">FOR SALE</div>
+                </div>
               {% endif %}
             {% endwith %}
-
-            <!-- Body -->
-            <div class="card-body">
-              <div class="card-title">{{ pigeon.name }}</div>
-              <div class="card-meta">
-                {% if pigeon.breed %}{{ pigeon.breed.name }}{% else %}Unknown Breed{% endif %}
-                · {{ pigeon.get_gender_display }}
+            <div class="pcv2-body">
+              <div class="pcv2-name">{{ pigeon.name }}</div>
+              <div class="pcv2-meta">
+                <span>{% if pigeon.breed %}{{ pigeon.breed.name }}{% else %}Unknown Breed{% endif %}</span>
+                <span class="pcv2-dot">·</span>
+                <span>{{ pigeon.get_gender_display }}</span>
               </div>
-              <div class="card-price">BDT{{ pigeon.listing.price }}</div>
-              <div style="display:flex;justify-content:space-between;
-                          align-items:center;font-size:12px;color:var(--text-muted);">
+              <div class="pcv2-price">BDT {{ pigeon.listing.price }}</div>
+              <div class="pcv2-footer">
                 <span>📍 {{ pigeon.listing.location }}</span>
-                <span>👁 {{ pigeon.listing.views_count }}</span>
+                <span>👁 {{ pigeon.listing.views_count }} views</span>
               </div>
             </div>
           </div>
@@ -101,48 +259,271 @@
       {% endfor %}
     </div>
   {% else %}
-    <div style="text-align:center;padding:60px;color:var(--text-muted);">
-      <p style="font-size:48px;margin-bottom:12px;">🐦</p>
-      <p style="font-size:16px;">No listings yet. Be the first to list!</p>
+    <div class="empty-listings">
+      <div style="font-size:64px;margin-bottom:16px;">🐦</div>
+      <h3>No Listings Yet</h3>
+      <p>Be the very first to list a pigeon on Bangladesh's biggest pigeon marketplace!</p>
       {% if user.is_authenticated %}
-        <a href="/marketplace/add/" class="btn-primary"
-           style="margin-top:16px;display:inline-block;">Add First Listing</a>
+        <a href="/marketplace/add/" class="btn-primary" style="margin-top:16px;">Add First Listing</a>
       {% else %}
-        <a href="/auth/register/" class="btn-primary"
-           style="margin-top:16px;display:inline-block;">Join Free</a>
+        <a href="/auth/register/" class="btn-primary" style="margin-top:16px;">Join &amp; List Free</a>
       {% endif %}
     </div>
   {% endif %}
 </div>
 
-<!-- Browse by Breed -->
-{% if breeds %}
-<div style="background:var(--surface);border-top:1px solid var(--border);
-            border-bottom:1px solid var(--border);padding:40px 0;">
+<!-- ── Live & Upcoming Auctions ── -->
+{% if live_auctions or upcoming_auctions %}
+<div class="ha-section">
   <div class="container">
-    <h2 class="section-title">Browse by Breed</h2>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-                gap:12px;">
-      {% for breed in breeds %}
-        <a href="/marketplace/?breed={{ breed.id }}"
-           style="text-decoration:none;">
-          <div style="background:var(--bg);border:1px solid var(--border);
-               border-radius:var(--radius);padding:16px;text-align:center;
-               transition:border-color .15s,background .15s;"
-               onmouseover="this.style.borderColor='var(--primary)';
-                            this.style.background='#eff6ff'"
-               onmouseout="this.style.borderColor='var(--border)';
-                           this.style.background='var(--bg)'">
-            <div style="font-size:28px;margin-bottom:6px;">🐦</div>
-            <div style="font-size:14px;font-weight:600;color:var(--text);">
-              {{ breed.name }}
+
+    <!-- Section header -->
+    <div class="ha-header">
+      <div>
+        <h2 class="ha-title">🔨 Pigeon Auctions</h2>
+        <p class="ha-sub">Real-time bidding on premium birds from sellers across Bangladesh</p>
+      </div>
+      <a href="/auctions/" class="ha-see-all">View all auctions →</a>
+    </div>
+
+    <!-- Live now banner (only when live auctions exist) -->
+    {% if live_auctions %}
+    <div class="ha-live-banner">
+      <span class="ha-live-dot"></span>
+      <strong>{{ live_auctions|length }} auction{{ live_auctions|length|pluralize }} live right now</strong>
+      <span class="ha-live-sub">— Bids close soon, don't miss out!</span>
+    </div>
+
+    <div class="ha-grid">
+      {% for a in live_auctions %}
+      <a href="/auctions/{{ a.pk }}/" class="ha-card">
+        <div class="ha-img-wrap">
+          {% with cover=a.get_cover_image %}
+            {% if cover %}<img src="{{ cover }}" alt="{{ a.title }}" class="ha-img">
+            {% else %}<div class="ha-img ha-img-ph">🐦</div>{% endif %}
+          {% endwith %}
+          <span class="ha-badge-live">🔴 LIVE</span>
+          <span class="ha-countdown" data-end="{{ a.end_time.isoformat }}" id="ha-cd-{{ a.pk }}">—</span>
+        </div>
+        <div class="ha-body">
+          <div class="ha-card-title">{{ a.title }}</div>
+          {% if a.pigeon %}
+          <div class="ha-card-meta">
+            🐦 {{ a.pigeon.name }}{% if a.pigeon.breed %} · {{ a.pigeon.breed.name }}{% endif %}
+          </div>
+          {% endif %}
+          <div class="ha-price-row">
+            <div>
+              <div class="ha-price-label">Current Bid</div>
+              <div class="ha-price">BDT {{ a.display_price|floatformat:"0" }}</div>
             </div>
-            {% if breed.origin %}
-              <div style="font-size:12px;color:var(--text-muted);">
-                {{ breed.origin }}
-              </div>
+            <div class="ha-bids-col">
+              <div class="ha-price-label">Bids</div>
+              <div class="ha-bids">{{ a.bid_count }}</div>
+            </div>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Upcoming auctions -->
+    {% if upcoming_auctions %}
+    <div class="ha-upcoming-section">
+      <div class="ha-upcoming-hdr">
+        <span class="ha-upcoming-chip">🕐 Starting Soon</span>
+      </div>
+      <div class="ha-upcoming-grid">
+        {% for a in upcoming_auctions %}
+        <a href="/auctions/{{ a.pk }}/" class="ha-uc-card">
+          <div class="ha-uc-img-wrap">
+            {% with cover=a.get_cover_image %}
+              {% if cover %}<img src="{{ cover }}" alt="" class="ha-uc-img">
+              {% else %}<div class="ha-uc-img ha-uc-img-ph">🐦</div>{% endif %}
+            {% endwith %}
+          </div>
+          <div class="ha-uc-body">
+            <div class="ha-uc-start">Starts {{ a.start_time|date:"d M, g:i A" }}</div>
+            <div class="ha-uc-title">{{ a.title }}</div>
+            <div class="ha-uc-price">From BDT {{ a.starting_price|floatformat:"0" }}</div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Guest CTA -->
+    {% if not user.is_authenticated %}
+    <div class="ha-cta">
+      <div class="ha-cta-text">
+        <strong>Join free to place bids</strong>
+        <span>— No fees, no commission, just fair open bidding</span>
+      </div>
+      <a href="/auth/register/" class="ha-cta-btn">Create Free Account</a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Community Wall Preview ── -->
+<div class="hw-section">
+  <div class="container">
+
+    <!-- Header -->
+    <div class="hw-header">
+      <div class="hw-header-left">
+        <div class="hw-label">🐦 Community Wall</div>
+        <h2 class="hw-title">See What Enthusiasts Are Sharing</h2>
+        <p class="hw-sub">Real pigeon lovers, real birds, real stories — from across Bangladesh</p>
+      </div>
+      <a href="/wall/" class="hw-see-all">See all posts →</a>
+    </div>
+
+    {% if recent_posts %}
+
+      <!-- Quick-post CTA bar -->
+      <div class="hw-composer-tease">
+        {% if user.is_authenticated %}
+          <div class="hw-ct-inner">
+            {% if user.avatar %}
+              <img src="{{ user.avatar.url }}" class="hw-ct-avatar" alt="">
+            {% else %}
+              <div class="hw-ct-avatar hw-ct-avatar-ph">{{ user.username|first|upper }}</div>
+            {% endif %}
+            <a href="/wall/" class="hw-ct-input">Share a photo of your pigeon with the community...</a>
+            <a href="/wall/" class="hw-ct-btn">📷 Post</a>
+          </div>
+        {% else %}
+          <div class="hw-ct-inner hw-ct-guest">
+            <span class="hw-ct-teaser">🐦 Join the community — share your pigeons, get likes, connect with enthusiasts!</span>
+            <div style="display:flex;gap:8px;flex-shrink:0;">
+              <a href="/auth/register/" class="hw-ct-btn">Join Free</a>
+              <a href="/auth/login/" class="hw-ct-btn-outline">Login</a>
+            </div>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Posts grid -->
+      <div class="hw-posts-grid">
+        {% for post in recent_posts %}
+        <a href="/wall/#post-{{ post.pk }}" class="hw-post-card">
+
+          <!-- Image area -->
+          {% with first_img=post.images.all.0 %}
+          <div class="hw-post-img {% if not first_img %}hw-post-img--empty{% endif %}">
+            {% if first_img %}
+              <img src="{{ first_img.image.url }}" alt="" loading="lazy">
+            {% else %}
+              <div class="hw-post-img-ph">🐦</div>
+            {% endif %}
+            {% if post.images.all|length > 1 %}
+              <div class="hw-img-count">+{{ post.images.all|length|add:"-1" }}</div>
             {% endif %}
           </div>
+          {% endwith %}
+
+          <!-- Author -->
+          <div class="hw-post-author">
+            {% if post.author.avatar %}
+              <img src="{{ post.author.avatar.url }}" class="hw-author-avatar" alt="">
+            {% else %}
+              <div class="hw-author-avatar hw-author-ph">{{ post.author.username|first|upper }}</div>
+            {% endif %}
+            <div class="hw-author-info">
+              <div class="hw-author-name">{{ post.author.username }}</div>
+              <div class="hw-author-time">{{ post.created_at|timesince }} ago</div>
+            </div>
+            {% if post.pigeon %}
+              <span class="hw-pigeon-badge">🐦 {{ post.pigeon.name }}</span>
+            {% endif %}
+          </div>
+
+          <!-- Content -->
+          <div class="hw-post-text">{{ post.content|truncatechars:120 }}</div>
+
+          <!-- Stats -->
+          <div class="hw-post-stats">
+            <span class="hw-stat {% if post.pk in liked_post_ids %}hw-stat--liked{% endif %}">
+              ❤️ {{ post.like_count }}
+            </span>
+            <span class="hw-stat">💬 {{ post.comment_count }}</span>
+            <span class="hw-read-more">Read more →</span>
+          </div>
+
+        </a>
+        {% endfor %}
+      </div>
+
+      <!-- Bottom CTA -->
+      <div class="hw-bottom-cta">
+        {% if not user.is_authenticated %}
+        <div class="hw-join-cta">
+          <div class="hw-join-text">
+            <div style="font-size:32px;margin-bottom:8px;">🕊️</div>
+            <h3>Join the Conversation</h3>
+            <p>Post photos of your pigeons, share achievements, and connect with thousands of enthusiasts across Bangladesh.</p>
+          </div>
+          <div class="hw-join-actions">
+            <a href="/auth/register/" class="hw-join-primary">Create Free Account</a>
+            <a href="/wall/" class="hw-join-secondary">Browse the Wall First</a>
+          </div>
+        </div>
+        {% else %}
+        <div style="text-align:center;">
+          <a href="/wall/" class="btn-primary" style="padding:12px 32px;font-size:15px;">
+            Go to Pigeon Wall →
+          </a>
+        </div>
+        {% endif %}
+      </div>
+
+    {% else %}
+      <!-- Empty wall state — big encourage-to-post -->
+      <div class="hw-empty">
+        <div class="hw-empty-birds">
+          <span>🕊️</span><span>🐦</span><span>🕊️</span>
+        </div>
+        <h3>The Wall is Empty — Be the First!</h3>
+        <p>No one has posted yet. Be the first to show off your pigeons to the whole community!</p>
+        {% if user.is_authenticated %}
+          <a href="/wall/" class="btn-primary" style="padding:13px 32px;margin-top:20px;font-size:15px;display:inline-block;">
+            Post First 🐦
+          </a>
+        {% else %}
+          <div style="display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap;">
+            <a href="/auth/register/" class="btn-primary" style="padding:13px 28px;font-size:15px;">Join &amp; Post Free</a>
+            <a href="/auth/login/"    class="btn-outline"  style="padding:13px 28px;font-size:15px;">Login</a>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+
+<!-- ── Browse by Breed ── -->
+{% if breeds %}
+<div class="breed-section">
+  <div class="container">
+    <div class="section-header">
+      <div>
+        <h2 class="section-title" style="margin:0;">🏷️ Browse by Breed</h2>
+        <p style="color:var(--text-muted);font-size:14px;margin-top:4px;">Find your favourite pigeon breed</p>
+      </div>
+    </div>
+    <div class="breed-grid">
+      {% for breed in breeds %}
+        <a href="/marketplace/?breed={{ breed.id }}" class="breed-card">
+          <div class="breed-icon">🐦</div>
+          <div class="breed-name">{{ breed.name }}</div>
+          {% if breed.origin %}
+            <div class="breed-origin">{{ breed.origin }}</div>
+          {% endif %}
         </a>
       {% endfor %}
     </div>
@@ -150,41 +531,144 @@
 </div>
 {% endif %}
 
-<!-- How It Works -->
+<!-- ── How It Works ── -->
 <div class="container section">
   <h2 class="section-title" style="text-align:center;">How It Works</h2>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:32px;
-              max-width:700px;margin:0 auto;text-align:center;">
-    <div>
-      <div style="font-size:40px;margin-bottom:12px;">📝</div>
-      <div style="font-weight:600;margin-bottom:6px;">Create Account</div>
-      <div style="font-size:14px;color:var(--text-muted);">
-        Sign up free in seconds. No credit card needed.
-      </div>
+  <p style="text-align:center;color:var(--text-muted);margin-top:-12px;margin-bottom:40px;">
+    Start buying or selling in just 3 easy steps
+  </p>
+  <div class="hiw-steps">
+    <div class="hiw-step">
+      <div class="hiw-icon-wrap hiw-icon-1">📝</div>
+      <div class="hiw-num">Step 1</div>
+      <div class="hiw-title">Create Account</div>
+      <div class="hiw-desc">Sign up free in seconds. No credit card or documents needed.</div>
     </div>
-    <div>
-      <div style="font-size:40px;margin-bottom:12px;">📋</div>
-      <div style="font-weight:600;margin-bottom:6px;">List Your Pigeon</div>
-      <div style="font-size:14px;color:var(--text-muted);">
-        Add photos, details, and set your price.
-      </div>
+    <div class="hiw-arrow">→</div>
+    <div class="hiw-step">
+      <div class="hiw-icon-wrap hiw-icon-2">🐦</div>
+      <div class="hiw-num">Step 2</div>
+      <div class="hiw-title">List Your Pigeon</div>
+      <div class="hiw-desc">Add photos, breed details, age, and set your asking price.</div>
     </div>
-    <div>
-      <div style="font-size:40px;margin-bottom:12px;">💬</div>
-      <div style="font-weight:600;margin-bottom:6px;">Connect & Sell</div>
-      <div style="font-size:14px;color:var(--text-muted);">
-        Message buyers directly through the platform.
-      </div>
+    <div class="hiw-arrow">→</div>
+    <div class="hiw-step">
+      <div class="hiw-icon-wrap hiw-icon-3">💰</div>
+      <div class="hiw-num">Step 3</div>
+      <div class="hiw-title">Connect &amp; Earn</div>
+      <div class="hiw-desc">Buyers message you directly. Agree on price and complete your sale!</div>
     </div>
   </div>
   {% if not user.is_authenticated %}
-    <div style="text-align:center;margin-top:32px;">
-      <a href="/auth/register/" class="btn-primary"
-         style="padding:12px 32px;font-size:16px;">
-        Get Started Free
+    <div style="text-align:center;margin-top:40px;">
+      <a href="/auth/register/" class="btn-primary" style="padding:14px 36px;font-size:16px;">
+        Get Started Free — It's 100% Free!
       </a>
     </div>
   {% endif %}
 </div>
+
+<!-- ── Why Choose BPH ── -->
+<div class="why-section">
+  <div class="container">
+    <h2 class="section-title" style="text-align:center;">Why Pigeon Enthusiasts Love BPH</h2>
+    <div class="why-grid">
+      <div class="why-card">
+        <div class="why-icon">🆓</div>
+        <h3>Always Free</h3>
+        <p>List unlimited pigeons with zero fees, zero commissions. Keep every taka you earn.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">🌍</div>
+        <h3>Nationwide Reach</h3>
+        <p>Connect with buyers and sellers from Dhaka, Chittagong, Sylhet and every corner of Bangladesh.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">🏆</div>
+        <h3>Pedigree Tracking</h3>
+        <p>Record and share your pigeon's family tree. Buyers love knowing the lineage of champion birds.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">💬</div>
+        <h3>Direct Messaging</h3>
+        <p>Chat directly with buyers and sellers. No middlemen, no delays — close deals faster.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">🥗</div>
+        <h3>Feed Calculator</h3>
+        <p>Get a custom feed plan for your flock's size, breed, and age — built right into the platform.</p>
+      </div>
+      <div class="why-card">
+        <div class="why-icon">📸</div>
+        <h3>Photo Showcase</h3>
+        <p>Upload multiple photos per bird so buyers see exactly what they're getting.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Final CTA Banner ── -->
+{% if not user.is_authenticated %}
+<div class="final-cta">
+  <div class="final-cta-birds">
+    <span class="float-bird fcb1">🕊️</span>
+    <span class="float-bird fcb2">🐦</span>
+    <span class="float-bird fcb3">🕊️</span>
+  </div>
+  <div class="container" style="position:relative;z-index:2;">
+    <div style="font-size:52px;margin-bottom:16px;">🐦</div>
+    <h2>Ready to Sell Your Pigeons?</h2>
+    <p>Join Bangladesh's largest pigeon community today. List your first bird in under 5 minutes — free forever.</p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:32px;">
+      <a href="/auth/register/" class="fcta-btn-primary">Create Free Account</a>
+      <a href="/marketplace/" class="fcta-btn-outline">Browse Listings First</a>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="final-cta">
+  <div class="final-cta-birds">
+    <span class="float-bird fcb1">🕊️</span>
+    <span class="float-bird fcb2">🐦</span>
+    <span class="float-bird fcb3">🕊️</span>
+  </div>
+  <div class="container" style="position:relative;z-index:2;">
+    <div style="font-size:52px;margin-bottom:16px;">🐦</div>
+    <h2>Ready to List a New Pigeon?</h2>
+    <p>Add your bird to Bangladesh's largest pigeon marketplace and start receiving offers today.</p>
+    <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin-top:32px;">
+      <a href="/marketplace/add/" class="fcta-btn-primary">List a Pigeon Now</a>
+      <a href="/dashboard/" class="fcta-btn-outline">Go to Dashboard</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+{% if live_auctions %}
+<script>
+(function() {
+  function fmtTime(sec) {
+    if (sec <= 0) return 'Ending…';
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    const pad = n => String(n).padStart(2, '0');
+    if (h > 0) return `${h}h ${pad(m)}m`;
+    if (m > 0) return `${m}m ${pad(s)}s`;
+    return `${s}s`;
+  }
+  document.querySelectorAll('.ha-countdown[data-end]').forEach(el => {
+    function tick() {
+      const end = new Date(el.dataset.end);
+      const sec = Math.floor((end - new Date()) / 1000);
+      el.textContent = fmtTime(sec);
+      if (sec < 300) el.classList.add('urgent');
+      if (sec > 0)   setTimeout(tick, 1000);
+    }
+    tick();
+  });
+})();
+</script>
+{% endif %}
 
 {% endblock %}

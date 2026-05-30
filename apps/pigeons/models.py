@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from apps.compress import compress_image
 
 class Breed(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -38,6 +39,10 @@ class Pigeon(models.Model):
     date_of_birth = models.DateField(null=True, blank=True)
     weight = models.FloatField(null=True, blank=True, help_text='Weight in grams')
     description = models.TextField(blank=True)
+    pedigree_image = models.ImageField(
+        upload_to='pedigree/', blank=True, null=True,
+        help_text='Photo of pedigree certificate or chart'
+    )
     is_for_sale = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -48,6 +53,13 @@ class Pigeon(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.ring_number or 'No Ring'})"
+
+    def save(self, *args, **kwargs):
+        if self.pedigree_image and not self.pedigree_image._committed:
+            compressed = compress_image(self.pedigree_image, max_width=1600, quality=72)
+            if compressed:
+                self.pedigree_image = compressed
+        super().save(*args, **kwargs)
 
     @property
     def primary_image(self):
@@ -80,6 +92,10 @@ class PigeonImage(models.Model):
         db_table = 'pigeon_images'
 
     def save(self, *args, **kwargs):
+        if self.image and not self.image._committed:
+            compressed = compress_image(self.image, max_width=1200, quality=65)
+            if compressed:
+                self.image = compressed
         # Ensure only one primary image per pigeon
         if self.is_primary:
             PigeonImage.objects.filter(

@@ -1,0 +1,72 @@
+{% extends 'panel/base.html' %}
+{% block page_title %}Offers{% endblock %}
+
+{% block content %}
+<form method="get" class="fbar">
+  <input type="text" name="q" placeholder="Buyer or listing..." value="{{ q }}">
+  <select name="status">
+    <option value="">All Statuses</option>
+    {% for val, lbl in offer_statuses %}
+    <option value="{{ val }}" {% if status_f == val %}selected{% endif %}>{{ lbl }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  {% if q or status_f %}<a href="/panel/offers/" class="btn btn-ghost">Clear</a>{% endif %}
+  <span class="total-label">{{ total }} offers</span>
+</form>
+
+<div class="card">
+  <div class="t-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Buyer</th>
+          <th>Listing</th>
+          <th>Seller</th>
+          <th>Offer</th>
+          <th>Counter</th>
+          <th>Message</th>
+          <th>Status</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for o in page_obj %}
+        <tr>
+          <td><a href="/panel/users/{{ o.buyer.id }}/" style="color:var(--primary);">{{ o.buyer.username }}</a></td>
+          <td class="trunc-sm">{{ o.listing.title }}</td>
+          <td style="font-size:12px;">
+            <a href="/panel/users/{{ o.listing.seller.id }}/" style="color:var(--muted);">{{ o.listing.seller.username }}</a>
+          </td>
+          <td>৳{{ o.amount|floatformat:0 }}</td>
+          <td>{% if o.counter_amount %}৳{{ o.counter_amount|floatformat:0 }}{% else %}—{% endif %}</td>
+          <td class="trunc" style="max-width:160px;font-size:12px;color:var(--muted);">{{ o.message|default:"—" }}</td>
+          <td>
+            {% if o.status == 'pending' %}<span class="b b-yellow">pending</span>
+            {% elif o.status == 'accepted' %}<span class="b b-green">accepted</span>
+            {% elif o.status == 'rejected' %}<span class="b b-red">rejected</span>
+            {% elif o.status == 'countered' %}<span class="b b-orange">countered</span>
+            {% else %}<span class="b b-gray">{{ o.status }}</span>{% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--muted);">{{ o.created_at|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="8">No offers found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pager">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status_f }}">‹ Prev</a>
+  {% endif %}
+  <span class="cur">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status_f }}">Next ›</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends 'panel/base.html' %}
+{% block page_title %}Listings{% endblock %}
+
+{% block content %}
+<form method="get" class="fbar">
+  <input type="text" name="q" placeholder="Title, seller, pigeon..." value="{{ q }}">
+  <select name="status">
+    <option value="">All Statuses</option>
+    {% for val, lbl in status_choices %}
+    <option value="{{ val }}" {% if status_f == val %}selected{% endif %}>{{ lbl }}</option>
+    {% endfor %}
+  </select>
+  <select name="district">
+    <option value="">All Districts</option>
+    {% for val, lbl in districts %}
+    <option value="{{ val }}" {% if district_f == val %}selected{% endif %}>{{ lbl }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  {% if q or status_f or district_f %}<a href="/panel/listings/" class="btn btn-ghost">Clear</a>{% endif %}
+  <span class="total-label">{{ total }} listings</span>
+</form>
+
+<div class="card">
+  <div class="t-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Seller</th>
+          <th>Breed</th>
+          <th>Price</th>
+          <th>District</th>
+          <th>Views</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in page_obj %}
+        <tr>
+          <td class="trunc-sm">{{ l.title }}</td>
+          <td>
+            <a href="/panel/users/{{ l.seller.id }}/" style="color:var(--primary);">{{ l.seller.username }}</a>
+          </td>
+          <td style="font-size:12px;color:var(--muted);">{{ l.pigeon.breed.name }}</td>
+          <td>৳{{ l.price|floatformat:0 }}</td>
+          <td style="font-size:12px;">{{ l.get_district_display }}</td>
+          <td style="color:var(--muted);font-size:12px;">{{ l.views_count }}</td>
+          <td>
+            {% if l.status == 'active' %}<span class="b b-green">active</span>
+            {% elif l.status == 'sold' %}<span class="b b-blue">sold</span>
+            {% elif l.status == 'reserved' %}<span class="b b-yellow">reserved</span>
+            {% else %}<span class="b b-gray">inactive</span>{% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--muted);">{{ l.created_at|date:"M d" }}</td>
+          <td style="white-space:nowrap;">
+            <form method="post" action="/panel/listings/{{ l.id }}/status/" style="display:inline;">
+              {% csrf_token %}
+              <select name="status" style="padding:3px 6px;border:1px solid var(--border);border-radius:4px;font-size:11px;">
+                {% for val, lbl in status_choices %}
+                <option value="{{ val }}" {% if l.status == val %}selected{% endif %}>{{ lbl }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn btn-sm btn-ghost" style="margin-left:3px;">Set</button>
+            </form>
+            <form method="post" action="/panel/listings/{{ l.id }}/delete/"
+                  style="display:inline;margin-left:4px;"
+                  onsubmit="return confirm('Delete listing {{ l.title|escapejs }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">Del</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="9">No listings found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pager">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status_f }}&district={{ district_f }}">‹ Prev</a>
+  {% endif %}
+  <span class="cur">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status_f }}&district={{ district_f }}">Next ›</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

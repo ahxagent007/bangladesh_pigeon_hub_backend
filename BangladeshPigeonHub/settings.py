@@ -39,6 +39,7 @@ LOCAL_APPS = [
     'apps.notifications',
     'apps.contests',
     'apps.auctions',
+    'apps.panel',
 ]
 
 LANGUAGE_CODE = 'en-us'
@@ -73,6 +74,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'apps.notifications.context_processors.notification_count',
+                'apps.recaptcha.recaptcha_context',
             ],
         },
     },
@@ -145,3 +147,7 @@ SERVER_EMAIL       = 'system@bdpigeonhub.com'
 PASSWORD_RESET_TIMEOUT = 3600   # reset links expire after 1 hour
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# ── Google reCAPTCHA v2 ───────────────────────────────────────────────────────
+RECAPTCHA_SITE_KEY   = '6LeS9AgtAAAAALb6_Rk2KSKJffxVyRhNzioTV3Wp'
+RECAPTCHA_SECRET_KEY = '6LeS9AgtAAAAANGxd0rMVeF4Q0Oqyj2v2mcXhWGe'

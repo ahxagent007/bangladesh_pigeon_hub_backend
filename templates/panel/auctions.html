@@ -1,0 +1,88 @@
+{% extends 'panel/base.html' %}
+{% block page_title %}Auctions{% endblock %}
+
+{% block content %}
+<form method="get" class="fbar">
+  <input type="text" name="q" placeholder="Title or seller..." value="{{ q }}">
+  <select name="status">
+    <option value="">All Statuses</option>
+    <option value="upcoming"  {% if status_f == 'upcoming' %}selected{% endif %}>Upcoming</option>
+    <option value="live"      {% if status_f == 'live' %}selected{% endif %}>Live</option>
+    <option value="ended"     {% if status_f == 'ended' %}selected{% endif %}>Ended</option>
+    <option value="cancelled" {% if status_f == 'cancelled' %}selected{% endif %}>Cancelled</option>
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  {% if q or status_f %}<a href="/panel/auctions/" class="btn btn-ghost">Clear</a>{% endif %}
+  <span class="total-label">{{ total }} auctions</span>
+</form>
+
+<div class="card">
+  <div class="t-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Seller</th>
+          <th>Start Price</th>
+          <th>Current</th>
+          <th>Bids</th>
+          <th>Views</th>
+          <th>End Time</th>
+          <th>Winner</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in page_obj %}
+        <tr>
+          <td class="trunc-sm">{{ a.title }}</td>
+          <td><a href="/panel/users/{{ a.seller.id }}/" style="color:var(--primary);">{{ a.seller.username }}</a></td>
+          <td>৳{{ a.starting_price|floatformat:0 }}</td>
+          <td>৳{{ a.display_price|floatformat:0 }}</td>
+          <td>{{ a.bid_count }}</td>
+          <td style="color:var(--muted);font-size:12px;">{{ a.views_count }}</td>
+          <td style="color:var(--muted);font-size:12px;">{{ a.end_time|date:"M d, H:i" }}</td>
+          <td style="font-size:12px;">
+            {% if a.winner %}
+              <a href="/panel/users/{{ a.winner.id }}/" style="color:var(--primary);">{{ a.winner.username }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td>
+            {% if a.status == 'live' %}<span class="b b-green">live</span>
+            {% elif a.status == 'upcoming' %}<span class="b b-yellow">upcoming</span>
+            {% elif a.status == 'ended' %}<span class="b b-blue">ended</span>
+            {% else %}<span class="b b-red">cancelled</span>{% endif %}
+          </td>
+          <td>
+            {% if a.status == 'live' or a.status == 'upcoming' %}
+            <form method="post" action="/panel/auctions/{{ a.id }}/cancel/"
+                  onsubmit="return confirm('Cancel auction {{ a.title|escapejs }}?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">Cancel</button>
+            </form>
+            {% else %}
+            <span style="color:var(--muted);font-size:12px;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="10">No auctions found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pager">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status_f }}">‹ Prev</a>
+  {% endif %}
+  <span class="cur">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status_f }}">Next ›</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

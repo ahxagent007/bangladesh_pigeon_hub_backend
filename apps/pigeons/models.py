@@ -83,9 +83,11 @@ class PigeonImage(models.Model):
     pigeon = models.ForeignKey(
         Pigeon, on_delete=models.CASCADE, related_name='images'
     )
-    image = models.ImageField(upload_to='pigeons/')
+    image      = models.ImageField(upload_to='pigeons/')
     is_primary = models.BooleanField(default=False)
-    caption = models.CharField(max_length=200, blank=True)
+    caption    = models.CharField(max_length=200, blank=True)
+    edit_score = models.SmallIntegerField(null=True, blank=True)
+    edit_notes = models.CharField(max_length=400, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -93,6 +95,9 @@ class PigeonImage(models.Model):
 
     def save(self, *args, **kwargs):
         if self.image and not self.image._committed:
+            # Analyze BEFORE compress — compression strips all EXIF
+            from apps.image_auth import analyze_image_edit
+            self.edit_score, self.edit_notes = analyze_image_edit(self.image)
             compressed = compress_image(self.image, max_width=1200, quality=65)
             if compressed:
                 self.image = compressed

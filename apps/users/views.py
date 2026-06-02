@@ -11,9 +11,12 @@ def register_view(request):
         return redirect('dashboard')
 
     from .forms import RegisterForm
+    from apps.recaptcha import verify_recaptcha
     if request.method == 'POST':
         form = RegisterForm(request.POST)
-        if form.is_valid():
+        if not verify_recaptcha(request.POST.get('g-recaptcha-response')):
+            messages.error(request, 'Please complete the CAPTCHA verification.')
+        elif form.is_valid():
             user = form.save()
             login(request, user)
             messages.success(request, f'Welcome to BD Pigeon Hub, {user.username}!')
@@ -55,6 +58,10 @@ def login_view(request):
         return redirect('dashboard')
 
     if request.method == 'POST':
+        from apps.recaptcha import verify_recaptcha
+        if not verify_recaptcha(request.POST.get('g-recaptcha-response')):
+            messages.error(request, 'Please complete the CAPTCHA verification.')
+            return render(request, 'users/login.html')
         username = request.POST.get('username')
         password = request.POST.get('password')
         user = authenticate(request, username=username, password=password)

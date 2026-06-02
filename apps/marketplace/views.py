@@ -74,6 +74,14 @@ def add_listing(request):
     errors = []
 
     if request.method == 'POST':
+        from apps.recaptcha import verify_recaptcha
+        if not verify_recaptcha(request.POST.get('g-recaptcha-response')):
+            errors.append('Please complete the CAPTCHA verification.')
+            return render(request, 'marketplace/add_listing.html', {
+                'listing_form': listing_form, 'pigeon_form': pigeon_form,
+                'user_pigeons': user_pigeons, 'breeds': breeds, 'errors': errors,
+                'post_mode': request.POST.get('mode', 'existing'),
+            })
         mode = request.POST.get('mode', 'existing')
         listing_form = ListingDetailsForm(request.POST)
 

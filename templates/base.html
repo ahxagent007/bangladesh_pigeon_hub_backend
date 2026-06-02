@@ -22,7 +22,13 @@
     gtag('config', 'G-JWLWY95P07');
   </script>
   <link rel="stylesheet" href="{% static 'css/main.css' %}">
+
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4608982941191227"
+     crossorigin="anonymous"></script>
+
   {% block extra_css %}{% endblock %}
+
+
 </head>
 <body>
 
@@ -45,7 +51,6 @@
         <a href="/marketplace/">Browse</a>
         <a href="/auctions/">Auctions</a>
         <a href="/wall/">Wall</a>
-        <a href="/contests/">Contests</a>
         {% if user.is_authenticated %}
           <a href="/marketplace/add/" class="btn-primary">+ List Pigeon</a>
           <!-- Notification bell -->
@@ -88,6 +93,7 @@
   <!-- Mobile Nav -->
   <div class="mobile-nav" id="mobileNav">
     <a href="/marketplace/">Browse Listings</a>
+    <a href="/auctions/">Auctions</a>
     <a href="/wall/">Pigeon Wall</a>
     <a href="/pedigree/">Pedigree</a>
     <a href="/feed/">Feed Guide</a>
@@ -150,6 +156,8 @@
     </div>
   </footer>
 
+  <script src="https://www.google.com/recaptcha/api.js?render={{ recaptcha_site_key }}" async></script>
+  <script>const RECAPTCHA_SITE_KEY = '{{ recaptcha_site_key }}';</script>
   <script src="{% static 'js/main.js' %}"></script>
   <script src="{% static 'js/lang.js' %}"></script>
   {% block extra_js %}{% endblock %}

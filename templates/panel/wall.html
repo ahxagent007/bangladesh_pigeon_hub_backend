@@ -1,0 +1,64 @@
+{% extends 'panel/base.html' %}
+{% block page_title %}Wall Posts{% endblock %}
+
+{% block content %}
+<form method="get" class="fbar">
+  <input type="text" name="q" placeholder="Author or content..." value="{{ q }}">
+  <button type="submit" class="btn btn-primary">Search</button>
+  {% if q %}<a href="/panel/wall/" class="btn btn-ghost">Clear</a>{% endif %}
+  <span class="total-label">{{ total }} posts</span>
+</form>
+
+<div class="card">
+  <div class="t-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Author</th>
+          <th>Content</th>
+          <th>Pigeon</th>
+          <th>Images</th>
+          <th>Likes</th>
+          <th>Comments</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in page_obj %}
+        <tr>
+          <td><a href="/panel/users/{{ p.author.id }}/" style="color:var(--primary);">{{ p.author.username }}</a></td>
+          <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ p.content }}</td>
+          <td style="font-size:12px;color:var(--muted);">{{ p.pigeon.name|default:"—" }}</td>
+          <td style="color:var(--muted);font-size:12px;">{{ p.images.count }}</td>
+          <td>{{ p.like_count }}</td>
+          <td>{{ p.comment_count }}</td>
+          <td style="font-size:12px;color:var(--muted);">{{ p.created_at|date:"M d, Y" }}</td>
+          <td>
+            <form method="post" action="/panel/wall/{{ p.id }}/delete/"
+                  onsubmit="return confirm('Delete this post?');">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="8">No posts found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pager">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}">‹ Prev</a>
+  {% endif %}
+  <span class="cur">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ q }}">Next ›</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

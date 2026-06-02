@@ -1,0 +1,71 @@
+{% extends 'panel/base.html' %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block content %}
+<form method="get" class="fbar">
+  <input type="text" name="q" placeholder="Recipient or message..." value="{{ q }}">
+  <select name="type">
+    <option value="">All Types</option>
+    {% for val, lbl in notif_types %}
+    <option value="{{ val }}" {% if type_f == val %}selected{% endif %}>{{ lbl }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  {% if q or type_f %}<a href="/panel/notifications/" class="btn btn-ghost">Clear</a>{% endif %}
+  <span class="total-label">{{ total }} notifications</span>
+</form>
+
+<div class="card">
+  <div class="t-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Recipient</th>
+          <th>Actor</th>
+          <th>Type</th>
+          <th>Message</th>
+          <th>URL</th>
+          <th>Read</th>
+          <th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for n in page_obj %}
+        <tr>
+          <td><a href="/panel/users/{{ n.recipient.id }}/" style="color:var(--primary);">{{ n.recipient.username }}</a></td>
+          <td style="font-size:12px;">
+            {% if n.actor %}
+              <a href="/panel/users/{{ n.actor.id }}/" style="color:var(--muted);">{{ n.actor.username }}</a>
+            {% else %}—{% endif %}
+          </td>
+          <td><span class="b b-blue" style="font-size:11px;">{{ n.notif_type }}</span></td>
+          <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;">{{ n.message }}</td>
+          <td style="font-size:12px;color:var(--muted);">
+            {% if n.url %}<a href="{{ n.url }}" style="color:var(--primary);" target="_blank">{{ n.url|truncatechars:30 }}</a>{% else %}—{% endif %}
+          </td>
+          <td>
+            {% if n.is_read %}<span class="b b-green">read</span>
+            {% else %}<span class="b b-yellow">unread</span>{% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--muted);">{{ n.created_at|date:"M d, H:i" }}</td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="7">No notifications found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pager">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&type={{ type_f }}">‹ Prev</a>
+  {% endif %}
+  <span class="cur">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&type={{ type_f }}">Next ›</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

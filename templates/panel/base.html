@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BPH Admin Panel</title>
+  {% load static %}
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --primary: #ea580c;
+      --primary-dark: #c2410c;
+      --text: #111827;
+      --muted: #6b7280;
+      --bg: #f3f4f6;
+      --surface: #ffffff;
+      --border: #e5e7eb;
+      --radius: 8px;
+      --sidebar-w: 224px;
+    }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+           background: var(--bg); color: var(--text); display: flex; min-height: 100vh; font-size: 14px; }
+
+    /* ── Sidebar ── */
+    .sidebar { width: var(--sidebar-w); background: #18181b; color: #d4d4d8;
+               position: fixed; top: 0; left: 0; height: 100vh;
+               display: flex; flex-direction: column; overflow-y: auto; z-index: 50;
+               transition: transform .2s; }
+    .sb-brand { padding: 18px 16px; border-bottom: 1px solid rgba(255,255,255,.07);
+                display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+    .sb-brand img { width: 34px; height: 34px; border-radius: 7px; object-fit: cover; }
+    .sb-brand .brand-name { font-size: 14px; font-weight: 700; color: #fff; line-height: 1.2; }
+    .sb-brand .brand-tag  { font-size: 10px; color: var(--primary); text-transform: uppercase; letter-spacing: .8px; }
+    .sb-nav { flex: 1; padding: 10px 0; }
+    .sb-section { padding: 10px 16px 3px; font-size: 10px; text-transform: uppercase;
+                  letter-spacing: 1px; color: rgba(255,255,255,.3); font-weight: 700; margin-top: 6px; }
+    .sb-nav a { display: flex; align-items: center; gap: 9px; padding: 8px 16px;
+                color: rgba(255,255,255,.65); text-decoration: none; font-size: 13.5px; transition: all .1s; }
+    .sb-nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+    .sb-nav a.active { background: rgba(234,88,12,.15); color: #fff; border-left: 3px solid var(--primary); }
+    .sb-nav a .ic { width: 17px; text-align: center; font-style: normal; }
+
+    /* ── Main ── */
+    .main-wrap { margin-left: var(--sidebar-w); flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+    .topbar { background: var(--surface); border-bottom: 1px solid var(--border);
+              padding: 0 20px; height: 54px; display: flex; align-items: center;
+              justify-content: space-between; position: sticky; top: 0; z-index: 40; }
+    .topbar-left { display: flex; align-items: center; gap: 12px; }
+    .topbar h1 { font-size: 16px; font-weight: 700; }
+    .hamburger { background: none; border: none; font-size: 20px; cursor: pointer;
+                 display: none; padding: 4px; }
+    .topbar-right { display: flex; align-items: center; gap: 14px; font-size: 13px; color: var(--muted); }
+    .topbar-right strong { color: var(--text); }
+    .topbar-right a { color: var(--primary); text-decoration: none; }
+    .topbar-right a:hover { text-decoration: underline; }
+
+    .flash-zone { padding: 10px 20px 0; }
+    .flash { padding: 11px 14px; border-radius: var(--radius); margin-bottom: 8px;
+             font-size: 13px; display: flex; justify-content: space-between; align-items: center; }
+    .flash-success { background: #d1fae5; color: #065f46; }
+    .flash-error, .flash-warning { background: #fee2e2; color: #991b1b; }
+    .flash button { background: none; border: none; cursor: pointer; font-size: 16px; color: inherit; line-height: 1; }
+
+    .panel-body { padding: 20px; flex: 1; }
+
+    /* ── Stats ── */
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 22px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .stat-card .num { font-size: 28px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .stat-card .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; margin-top: 3px; }
+
+    /* ── Cards & Tables ── */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+    .card + .card { margin-top: 16px; }
+    .card-head { padding: 12px 16px; border-bottom: 1px solid var(--border);
+                 display: flex; align-items: center; justify-content: space-between; }
+    .card-head h2 { font-size: 14px; font-weight: 700; }
+    .t-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #fafafa; padding: 9px 12px; text-align: left; font-size: 10.5px;
+         text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-weight: 700;
+         border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+    .empty-row td { text-align: center; color: var(--muted); padding: 28px !important; font-size: 13px; }
+
+    /* ── Badges ── */
+    .b { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+    .b-green  { background: #d1fae5; color: #065f46; }
+    .b-red    { background: #fee2e2; color: #991b1b; }
+    .b-yellow { background: #fef3c7; color: #92400e; }
+    .b-blue   { background: #dbeafe; color: #1e40af; }
+    .b-gray   { background: #f3f4f6; color: #374151; }
+    .b-orange { background: #ffedd5; color: #9a3412; }
+
+    /* ── Buttons ── */
+    .btn { padding: 7px 14px; border-radius: var(--radius); font-size: 13px; cursor: pointer;
+           border: none; font-weight: 500; text-decoration: none; display: inline-block; line-height: 1.4; }
+    .btn-sm { padding: 4px 9px; font-size: 12px; }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-ghost { background: var(--bg); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--border); }
+    .btn-danger { background: #ef4444; color: #fff; }
+    .btn-danger:hover { background: #dc2626; }
+    .btn-success { background: #10b981; color: #fff; }
+    .btn-success:hover { background: #059669; }
+    .btn-warn { background: #f59e0b; color: #fff; }
+    .btn-warn:hover { background: #d97706; }
+
+    /* ── Filter bar ── */
+    .fbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+    .fbar input, .fbar select {
+      padding: 7px 11px; border: 1px solid var(--border); border-radius: var(--radius);
+      font-size: 13px; background: var(--surface); color: var(--text); }
+    .fbar input:focus, .fbar select:focus { outline: none; border-color: var(--primary); }
+    .fbar input[type=text] { min-width: 180px; max-width: 300px; flex: 1; }
+    .total-label { color: var(--muted); font-size: 12px; margin-left: 4px; }
+
+    /* ── Pagination ── */
+    .pager { display: flex; gap: 4px; margin-top: 14px; align-items: center; }
+    .pager a, .pager span { padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius);
+                            font-size: 13px; text-decoration: none; color: var(--text); background: var(--surface); }
+    .pager .cur { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+    /* ── Grid ── */
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 860px) { .grid2 { grid-template-columns: 1fr; } }
+
+    /* ── User detail layout ── */
+    .detail-wrap { display: grid; grid-template-columns: 260px 1fr; gap: 16px; margin-top: 14px; }
+    @media (max-width: 860px) { .detail-wrap { grid-template-columns: 1fr; } }
+    .profile-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; }
+    .avatar-lg { width: 76px; height: 76px; border-radius: 50%; object-fit: cover; margin-bottom: 10px; }
+    .avatar-lg-ph { width: 76px; height: 76px; border-radius: 50%; background: var(--primary); color: #fff;
+                    font-size: 28px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin: 0 auto 10px; }
+    .info-table td { border: none !important; padding: 4px 0 !important; font-size: 13px; }
+    .info-table td:first-child { color: var(--muted); padding-right: 12px !important; }
+
+    /* ── Misc ── */
+    .back-link { color: var(--muted); font-size: 13px; text-decoration: none; }
+    .back-link:hover { color: var(--primary); }
+    .trunc { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .trunc-sm { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+    /* ── Mobile ── */
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .main-wrap { margin-left: 0; }
+      .hamburger { display: block; }
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sb-brand">
+    <img src="{% static 'images/logo.jpg' %}" alt="BPH">
+    <div>
+      <div class="brand-name">BD Pigeon Hub</div>
+      <div class="brand-tag">Admin Panel</div>
+    </div>
+  </div>
+  <nav class="sb-nav">
+
+    <div class="sb-section">Overview</div>
+    <a href="/panel/" class="{% if request.resolver_match.url_name == 'panel-dashboard' %}active{% endif %}">
+      <i class="ic">📊</i> Dashboard
+    </a>
+
+    <div class="sb-section">Management</div>
+    <a href="/panel/users/" class="{% if 'user' in request.resolver_match.url_name %}active{% endif %}">
+      <i class="ic">👥</i> Users
+    </a>
+    <a href="/panel/listings/" class="{% if request.resolver_match.url_name == 'panel-listings' %}active{% endif %}">
+      <i class="ic">🏷️</i> Listings
+    </a>
+    <a href="/panel/auctions/" class="{% if request.resolver_match.url_name == 'panel-auctions' %}active{% endif %}">
+      <i class="ic">🔨</i> Auctions
+    </a>
+
+    <div class="sb-section">Transactions</div>
+    <a href="/panel/offers/" class="{% if request.resolver_match.url_name == 'panel-offers' %}active{% endif %}">
+      <i class="ic">💰</i> Offers
+    </a>
+    <a href="/panel/payments/" class="{% if request.resolver_match.url_name == 'panel-payments' %}active{% endif %}">
+      <i class="ic">💳</i> Payments
+    </a>
+
+    <div class="sb-section">Social</div>
+    <a href="/panel/wall/" class="{% if request.resolver_match.url_name == 'panel-wall' %}active{% endif %}">
+      <i class="ic">📰</i> Wall Posts
+    </a>
+    <a href="/panel/notifications/" class="{% if request.resolver_match.url_name == 'panel-notifications' %}active{% endif %}">
+      <i class="ic">🔔</i> Notifications
+    </a>
+
+    <div class="sb-section">System</div>
+    <a href="/admin/"><i class="ic">⚙️</i> Django Admin</a>
+    <a href="/"><i class="ic">🌐</i> View Site</a>
+
+  </nav>
+</aside>
+
+<div class="main-wrap">
+  <header class="topbar">
+    <div class="topbar-left">
+      <button class="hamburger" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button>
+      <h1>{% block page_title %}Admin Panel{% endblock %}</h1>
+    </div>
+    <div class="topbar-right">
+      <span>Hello, <strong>{{ request.user.username }}</strong></span>
+      <a href="/auth/logout/">Logout</a>
+    </div>
+  </header>
+
+  {% if messages %}
+  <div class="flash-zone">
+    {% for message in messages %}
+      <div class="flash flash-{{ message.tags }}">
+        <span>{{ message }}</span>
+        <button onclick="this.parentElement.remove()">×</button>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <main class="panel-body">
+    {% block content %}{% endblock %}
+  </main>
+</div>
+
+</body>
+</html>

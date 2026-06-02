@@ -299,6 +299,8 @@
             <div class="form-error">{{ listing_form.description.errors.0 }}</div>{% endif %}
         </div>
 
+        <input type="hidden" name="g-recaptcha-response" id="listing-recaptcha-token">
+
         <!-- Submit -->
         <div class="sell-actions">
           <button type="submit" class="sell-submit-btn">
@@ -552,6 +554,17 @@ function previewImage(input, previewId, boxId) {
   const mode = document.getElementById('hidden-mode').value;
   if (mode !== 'new') setNewPigeonFields(true);
 })();
+
+document.getElementById('sell-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var form = this;
+  grecaptcha.ready(function() {
+    grecaptcha.execute(RECAPTCHA_SITE_KEY, {action: 'add_listing'}).then(function(token) {
+      document.getElementById('listing-recaptcha-token').value = token;
+      form.submit();
+    });
+  });
+});
 </script>
 
 {% endblock %}

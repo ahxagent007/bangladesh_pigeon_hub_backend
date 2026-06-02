@@ -1,0 +1,88 @@
+{% extends 'panel/base.html' %}
+{% block page_title %}Payments{% endblock %}
+
+{% block content %}
+<form method="get" class="fbar">
+  <input type="text" name="q" placeholder="Buyer or transaction ID..." value="{{ q }}">
+  <select name="status">
+    <option value="">All Statuses</option>
+    <option value="pending"   {% if status_f == 'pending' %}selected{% endif %}>Pending</option>
+    <option value="confirmed" {% if status_f == 'confirmed' %}selected{% endif %}>Confirmed</option>
+    <option value="disputed"  {% if status_f == 'disputed' %}selected{% endif %}>Disputed</option>
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  {% if q or status_f %}<a href="/panel/payments/" class="btn btn-ghost">Clear</a>{% endif %}
+  <span class="total-label">{{ total }} payments</span>
+</form>
+
+<div class="card">
+  <div class="t-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Buyer</th>
+          <th>Listing</th>
+          <th>Amount</th>
+          <th>Method</th>
+          <th>TXN ID</th>
+          <th>Note</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in page_obj %}
+        <tr>
+          <td><a href="/panel/users/{{ p.buyer.id }}/" style="color:var(--primary);">{{ p.buyer.username }}</a></td>
+          <td class="trunc-sm">{{ p.offer.listing.title }}</td>
+          <td>৳{{ p.amount|floatformat:0 }}</td>
+          <td><span class="b b-blue">{{ p.method }}</span></td>
+          <td style="font-size:12px;font-family:monospace;">{{ p.trx_id }}</td>
+          <td class="trunc" style="max-width:140px;font-size:12px;color:var(--muted);">{{ p.note|default:"—" }}</td>
+          <td>
+            {% if p.status == 'pending' %}<span class="b b-yellow">pending</span>
+            {% elif p.status == 'confirmed' %}<span class="b b-green">confirmed</span>
+            {% else %}<span class="b b-red">disputed</span>{% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--muted);">{{ p.created_at|date:"M d, Y" }}</td>
+          <td style="white-space:nowrap;">
+            {% if p.status == 'pending' %}
+              <form method="post" action="/panel/payments/{{ p.id }}/action/" style="display:inline;">
+                {% csrf_token %}
+                <button name="action" value="confirmed" class="btn btn-sm btn-success">Confirm</button>
+              </form>
+              <form method="post" action="/panel/payments/{{ p.id }}/action/" style="display:inline;margin-left:4px;">
+                {% csrf_token %}
+                <button name="action" value="disputed" class="btn btn-sm btn-danger">Dispute</button>
+              </form>
+            {% elif p.status == 'disputed' %}
+              <form method="post" action="/panel/payments/{{ p.id }}/action/" style="display:inline;">
+                {% csrf_token %}
+                <button name="action" value="confirmed" class="btn btn-sm btn-success">Confirm</button>
+              </form>
+            {% else %}
+              <span style="color:var(--muted);font-size:12px;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="9">No payments found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pager">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&status={{ status_f }}">‹ Prev</a>
+  {% endif %}
+  <span class="cur">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&status={{ status_f }}">Next ›</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

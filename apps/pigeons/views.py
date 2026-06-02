@@ -72,9 +72,12 @@ def pigeon_detail_view(request, pk):
 @login_required
 def add_pigeon_view(request):
     if request.method == 'POST':
+        from apps.recaptcha import verify_recaptcha
         form = PigeonForm(request.POST)
         image_form = PigeonImageForm(request.POST, request.FILES)
-        if form.is_valid():
+        if not verify_recaptcha(request.POST.get('g-recaptcha-response')):
+            messages.error(request, 'Please complete the CAPTCHA verification.')
+        elif form.is_valid():
             pigeon = form.save(commit=False)
             pigeon.owner = request.user
             pigeon.save()
@@ -98,8 +101,11 @@ def add_pigeon_view(request):
 def edit_pigeon_view(request, pk):
     pigeon = get_object_or_404(Pigeon, pk=pk, owner=request.user)
     if request.method == 'POST':
+        from apps.recaptcha import verify_recaptcha
         form = PigeonForm(request.POST, instance=pigeon)
-        if form.is_valid():
+        if not verify_recaptcha(request.POST.get('g-recaptcha-response')):
+            messages.error(request, 'Please complete the CAPTCHA verification.')
+        elif form.is_valid():
             form.save()
             if request.FILES.get('image'):
                 PigeonImage.objects.filter(pigeon=pigeon, is_primary=True).delete()

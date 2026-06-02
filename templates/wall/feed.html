@@ -184,6 +184,12 @@
                 {% for img in imgs %}
                   <div class="pi-wrap" onclick="openLightbox('{{ img.image.url }}')">
                     <img src="{{ img.image.url }}" alt="post image" loading="lazy">
+                    {% if img.edit_score is not None %}
+                      <div class="pi-auth-badge {% if img.edit_score <= 20 %}auth-raw{% elif img.edit_score <= 50 %}auth-low{% elif img.edit_score <= 75 %}auth-mid{% else %}auth-high{% endif %}"
+                           title="{{ img.edit_notes }}">
+                        {% if img.edit_score <= 20 %}📷 Raw{% else %}✏️ {{ img.edit_score }}%{% endif %}
+                      </div>
+                    {% endif %}
                     {% if forloop.counter == 4 and imgs|length > 4 %}
                       <div class="pi-more">+{{ imgs|length|add:"-3" }}</div>
                     {% endif %}
@@ -525,6 +531,17 @@
   color: white; font-size: 24px; font-weight: 700;
   display: flex; align-items: center; justify-content: center;
 }
+.pi-auth-badge {
+  position: absolute; bottom: 7px; left: 7px;
+  padding: 3px 8px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; cursor: help;
+  backdrop-filter: blur(4px); line-height: 1.4;
+  pointer-events: auto;
+}
+.auth-raw  { background: rgba(209,250,229,.92); color: #065f46; }
+.auth-low  { background: rgba(254,243,199,.92); color: #92400e; }
+.auth-mid  { background: rgba(255,237,213,.92); color: #9a3412; }
+.auth-high { background: rgba(254,226,226,.92); color: #991b1b; }
 
 /* Post stats row */
 .post-stats {
@@ -678,10 +695,18 @@ document.getElementById('post-form')?.addEventListener('submit', async function(
   const btn = document.getElementById('post-btn');
   btn.disabled = true;
 
+  // reCAPTCHA v3 — get token silently before submitting
+  const rcToken = await new Promise(resolve =>
+    grecaptcha.ready(() =>
+      grecaptcha.execute(RECAPTCHA_SITE_KEY, {action: 'wall_post'}).then(resolve)
+    )
+  );
+
   const fd = new FormData(this);
   // Replace file list with selected files
   fd.delete('images');
   selectedFiles.forEach(f => fd.append('images', f));
+  fd.append('g-recaptcha-response', rcToken);
 
   const res = await fetch('/wall/post/', {
     method: 'POST',
@@ -693,6 +718,8 @@ document.getElementById('post-form')?.addEventListener('submit', async function(
     prependPost(data.post);
     collapseComposer();
     selectedFiles = [];
+  } else if (data.error) {
+    alert(data.error);
   }
   btn.disabled = false;
 });

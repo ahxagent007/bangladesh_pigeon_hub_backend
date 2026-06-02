@@ -7,9 +7,15 @@ class BreedSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class PigeonImageSerializer(serializers.ModelSerializer):
+    edit_label = serializers.SerializerMethodField()
+
     class Meta:
-        model = PigeonImage
-        fields = ('id', 'image', 'is_primary', 'caption')
+        model  = PigeonImage
+        fields = ('id', 'image', 'is_primary', 'caption', 'edit_score', 'edit_notes', 'edit_label')
+
+    def get_edit_label(self, obj):
+        from apps.image_auth import edit_label
+        return edit_label(obj.edit_score)
 
 class PigeonSerializer(serializers.ModelSerializer):
     images      = PigeonImageSerializer(many=True, read_only=True)

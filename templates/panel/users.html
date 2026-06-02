@@ -1,0 +1,104 @@
+{% extends 'panel/base.html' %}
+{% block page_title %}Users{% endblock %}
+
+{% block content %}
+<form method="get" class="fbar">
+  <input type="text" name="q" placeholder="Search username, email, phone..." value="{{ q }}">
+  <select name="filter">
+    <option value="">All Users</option>
+    <option value="staff"       {% if filter_by == 'staff' %}selected{% endif %}>Staff Only</option>
+    <option value="inactive"    {% if filter_by == 'inactive' %}selected{% endif %}>Banned</option>
+    <option value="verified"    {% if filter_by == 'verified' %}selected{% endif %}>Verified</option>
+    <option value="unverified"  {% if filter_by == 'unverified' %}selected{% endif %}>Unverified</option>
+  </select>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  {% if q or filter_by %}<a href="/panel/users/" class="btn btn-ghost">Clear</a>{% endif %}
+  <span class="total-label">{{ total }} users</span>
+</form>
+
+<div class="card">
+  <div class="t-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Joined</th>
+          <th>Listings</th>
+          <th>Auctions</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in page_obj %}
+        <tr>
+          <td>
+            <a href="/panel/users/{{ u.id }}/" style="color:var(--primary);font-weight:600;">{{ u.username }}</a>
+            {% if u.is_superuser %}<span class="b b-orange" style="margin-left:4px;">super</span>
+            {% elif u.is_staff %}<span class="b b-blue" style="margin-left:4px;">staff</span>{% endif %}
+          </td>
+          <td style="color:var(--muted);font-size:12px;">{{ u.email|default:"—" }}</td>
+          <td style="color:var(--muted);font-size:12px;">{{ u.phone|default:"—" }}</td>
+          <td style="color:var(--muted);font-size:12px;">{{ u.date_joined|date:"M d, Y" }}</td>
+          <td>{{ u.num_listings }}</td>
+          <td>{{ u.num_auctions }}</td>
+          <td>
+            {% if not u.is_active %}<span class="b b-red">banned</span>
+            {% elif u.is_verified %}<span class="b b-green">verified ✓</span>
+            {% else %}<span class="b b-gray">active</span>{% endif %}
+          </td>
+          <td style="white-space:nowrap;">
+            {% if not u.is_superuser %}
+            <form method="post" action="/panel/users/{{ u.id }}/toggle/" style="display:inline;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="active">
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="btn btn-sm {% if u.is_active %}btn-warn{% else %}btn-success{% endif %}">
+                {% if u.is_active %}Ban{% else %}Unban{% endif %}
+              </button>
+            </form>
+            <form method="post" action="/panel/users/{{ u.id }}/toggle/" style="display:inline;margin-left:4px;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="verified">
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="btn btn-sm {% if u.is_verified %}btn-ghost{% else %}btn-primary{% endif %}">
+                {% if u.is_verified %}Unverify{% else %}Verify{% endif %}
+              </button>
+            </form>
+            {% if request.user.is_superuser %}
+            <form method="post" action="/panel/users/{{ u.id }}/toggle/" style="display:inline;margin-left:4px;">
+              {% csrf_token %}
+              <input type="hidden" name="action" value="staff">
+              <input type="hidden" name="next" value="{{ request.get_full_path }}">
+              <button type="submit" class="btn btn-sm btn-ghost">
+                {% if u.is_staff %}Demote{% else %}Staff{% endif %}
+              </button>
+            </form>
+            {% endif %}
+            {% else %}
+            <span style="color:var(--muted);font-size:12px;">superuser</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr class="empty-row"><td colspan="8">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if page_obj.has_other_pages %}
+<div class="pager">
+  {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}&q={{ q }}&filter={{ filter_by }}">‹ Prev</a>
+  {% endif %}
+  <span class="cur">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+  {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}&q={{ q }}&filter={{ filter_by }}">Next ›</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

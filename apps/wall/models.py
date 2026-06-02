@@ -28,9 +28,11 @@ class Post(models.Model):
 
 
 class PostImage(models.Model):
-    post  = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField(upload_to='wall/')
-    order = models.PositiveSmallIntegerField(default=0)
+    post       = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='images')
+    image      = models.ImageField(upload_to='wall/')
+    order      = models.PositiveSmallIntegerField(default=0)
+    edit_score = models.SmallIntegerField(null=True, blank=True)
+    edit_notes = models.CharField(max_length=400, blank=True)
 
     class Meta:
         db_table = 'wall_post_images'
@@ -38,6 +40,9 @@ class PostImage(models.Model):
 
     def save(self, *args, **kwargs):
         if self.image and not self.image._committed:
+            # Analyze BEFORE compress — compression strips all EXIF
+            from apps.image_auth import analyze_image_edit
+            self.edit_score, self.edit_notes = analyze_image_edit(self.image)
             compressed = compress_image(self.image, max_width=1200, quality=65)
             if compressed:
                 self.image = compressed

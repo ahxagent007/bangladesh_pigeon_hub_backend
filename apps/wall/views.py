@@ -71,6 +71,10 @@ def wall_feed(request):
 @login_required
 @require_POST
 def create_post(request):
+    from apps.recaptcha import verify_recaptcha
+    if not verify_recaptcha(request.POST.get('g-recaptcha-response')):
+        return JsonResponse({'error': 'CAPTCHA verification failed. Please try again.'}, status=400)
+
     content = request.POST.get('content', '').strip()
     if not content:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':

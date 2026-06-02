@@ -9,7 +9,7 @@
     </h1>
 
     <div class="card" style="padding:32px;">
-      <form method="post" enctype="multipart/form-data" novalidate>
+      <form method="post" enctype="multipart/form-data" novalidate id="pigeon-form">
         {% csrf_token %}
 
         <!-- Image Upload -->
@@ -133,6 +133,8 @@
                     placeholder="Any notable characteristics, race history, etc.">{{ form.description.value|default:'' }}</textarea>
         </div>
 
+        <input type="hidden" name="g-recaptcha-response" id="pigeon-recaptcha-token">
+
         <!-- Submit -->
         <div style="display:flex;gap:12px;margin-top:8px;">
           <button type="submit" class="btn-primary"
@@ -165,5 +167,16 @@ function previewImg(input) {
     reader.readAsDataURL(file);
   }
 }
+
+document.getElementById('pigeon-form').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var form = this;
+  grecaptcha.ready(function() {
+    grecaptcha.execute(RECAPTCHA_SITE_KEY, {action: 'add_pigeon'}).then(function(token) {
+      document.getElementById('pigeon-recaptcha-token').value = token;
+      form.submit();
+    });
+  });
+});
 </script>
 {% endblock %}

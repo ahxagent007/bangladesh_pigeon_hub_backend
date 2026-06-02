@@ -1,11 +1,13 @@
 {% extends 'base.html' %}
 {% block title %}Login — BPH{% endblock %}
+
 {% block content %}
 <div class="container">
   <div class="form-card card">
     <h2 style="margin-bottom:24px;font-size:22px;">Sign in</h2>
-    <form method="post" novalidate>
+    <form method="post" novalidate id="login-form">
       {% csrf_token %}
+      <input type="hidden" name="g-recaptcha-response" id="login-recaptcha-token">
       <div class="form-group">
         <label>Username or Phone Number</label>
         <input type="text" name="username" autofocus required>
@@ -26,4 +28,19 @@
     </p>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('login-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = this;
+    grecaptcha.ready(function() {
+      grecaptcha.execute(RECAPTCHA_SITE_KEY, {action: 'login'}).then(function(token) {
+        document.getElementById('login-recaptcha-token').value = token;
+        form.submit();
+      });
+    });
+  });
+</script>
 {% endblock %}

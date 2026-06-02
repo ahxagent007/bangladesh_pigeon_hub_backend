@@ -1,0 +1,177 @@
+{% extends 'panel/base.html' %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">{{ stats.total_users }}</div><div class="lbl">Total Users</div></div>
+  <div class="stat-card"><div class="num">{{ stats.active_users }}</div><div class="lbl">Active Users</div></div>
+  <div class="stat-card"><div class="num">{{ stats.verified_users }}</div><div class="lbl">Verified</div></div>
+  <div class="stat-card"><div class="num">{{ stats.active_listings }}</div><div class="lbl">Active Listings</div></div>
+  <div class="stat-card"><div class="num">{{ stats.sold_listings }}</div><div class="lbl">Sold Listings</div></div>
+  <div class="stat-card"><div class="num">{{ stats.live_auctions }}</div><div class="lbl">Live Auctions</div></div>
+  <div class="stat-card"><div class="num">{{ stats.total_auctions }}</div><div class="lbl">Total Auctions</div></div>
+  <div class="stat-card"><div class="num">{{ stats.pending_offers }}</div><div class="lbl">Pending Offers</div></div>
+  <div class="stat-card"><div class="num">{{ stats.pending_payments }}</div><div class="lbl">Pending Payments</div></div>
+  <div class="stat-card"><div class="num">{{ stats.confirmed_payments }}</div><div class="lbl">Confirmed Payments</div></div>
+  <div class="stat-card"><div class="num">{{ stats.total_wall_posts }}</div><div class="lbl">Wall Posts</div></div>
+  <div class="stat-card"><div class="num">{{ stats.unread_notifs }}</div><div class="lbl">Unread Notifs</div></div>
+</div>
+
+<div class="grid2">
+
+  <!-- Recent Users -->
+  <div class="card">
+    <div class="card-head">
+      <h2>Recent Users</h2>
+      <a href="/panel/users/" class="btn btn-sm btn-ghost">All Users</a>
+    </div>
+    <div class="t-wrap">
+      <table>
+        <thead><tr><th>User</th><th>Joined</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for u in recent_users %}
+          <tr>
+            <td>
+              <a href="/panel/users/{{ u.id }}/" style="color:var(--primary);font-weight:600;">{{ u.username }}</a>
+              {% if u.is_staff %}<span class="b b-blue" style="margin-left:4px;">staff</span>{% endif %}
+            </td>
+            <td style="color:var(--muted);font-size:12px;">{{ u.date_joined|date:"M d, Y" }}</td>
+            <td>
+              {% if not u.is_active %}<span class="b b-red">banned</span>
+              {% elif u.is_verified %}<span class="b b-green">verified</span>
+              {% else %}<span class="b b-gray">active</span>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row"><td colspan="3">No users yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Listings -->
+  <div class="card">
+    <div class="card-head">
+      <h2>Recent Listings</h2>
+      <a href="/panel/listings/" class="btn btn-sm btn-ghost">All Listings</a>
+    </div>
+    <div class="t-wrap">
+      <table>
+        <thead><tr><th>Title</th><th>Seller</th><th>Price</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for l in recent_listings %}
+          <tr>
+            <td class="trunc-sm">{{ l.title }}</td>
+            <td>{{ l.seller.username }}</td>
+            <td>৳{{ l.price|floatformat:0 }}</td>
+            <td>
+              {% if l.status == 'active' %}<span class="b b-green">active</span>
+              {% elif l.status == 'sold' %}<span class="b b-blue">sold</span>
+              {% elif l.status == 'reserved' %}<span class="b b-yellow">reserved</span>
+              {% else %}<span class="b b-gray">inactive</span>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row"><td colspan="4">No listings yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Offers -->
+  <div class="card">
+    <div class="card-head">
+      <h2>Recent Offers</h2>
+      <a href="/panel/offers/" class="btn btn-sm btn-ghost">All Offers</a>
+    </div>
+    <div class="t-wrap">
+      <table>
+        <thead><tr><th>Buyer</th><th>Listing</th><th>Amount</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for o in recent_offers %}
+          <tr>
+            <td>{{ o.buyer.username }}</td>
+            <td class="trunc-sm">{{ o.listing.title }}</td>
+            <td>৳{{ o.amount|floatformat:0 }}</td>
+            <td>
+              {% if o.status == 'pending' %}<span class="b b-yellow">pending</span>
+              {% elif o.status == 'accepted' %}<span class="b b-green">accepted</span>
+              {% elif o.status == 'rejected' %}<span class="b b-red">rejected</span>
+              {% elif o.status == 'countered' %}<span class="b b-orange">countered</span>
+              {% else %}<span class="b b-gray">{{ o.status }}</span>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row"><td colspan="4">No offers yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Payments -->
+  <div class="card">
+    <div class="card-head">
+      <h2>Recent Payments</h2>
+      <a href="/panel/payments/" class="btn btn-sm btn-ghost">All Payments</a>
+    </div>
+    <div class="t-wrap">
+      <table>
+        <thead><tr><th>Buyer</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for p in recent_payments %}
+          <tr>
+            <td>{{ p.buyer.username }}</td>
+            <td>৳{{ p.amount|floatformat:0 }}</td>
+            <td><span class="b b-blue">{{ p.method }}</span></td>
+            <td>
+              {% if p.status == 'pending' %}<span class="b b-yellow">pending</span>
+              {% elif p.status == 'confirmed' %}<span class="b b-green">confirmed</span>
+              {% else %}<span class="b b-red">disputed</span>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row"><td colspan="4">No payments yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Auctions -->
+  <div class="card" style="grid-column:1/-1;">
+    <div class="card-head">
+      <h2>Recent Auctions</h2>
+      <a href="/panel/auctions/" class="btn btn-sm btn-ghost">All Auctions</a>
+    </div>
+    <div class="t-wrap">
+      <table>
+        <thead><tr><th>Title</th><th>Seller</th><th>Current Price</th><th>Bids</th><th>End Time</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for a in recent_auctions %}
+          <tr>
+            <td class="trunc">{{ a.title }}</td>
+            <td>{{ a.seller.username }}</td>
+            <td>৳{{ a.display_price|floatformat:0 }}</td>
+            <td>{{ a.bid_count }}</td>
+            <td style="font-size:12px;color:var(--muted);">{{ a.end_time|date:"M d, H:i" }}</td>
+            <td>
+              {% if a.status == 'live' %}<span class="b b-green">live</span>
+              {% elif a.status == 'upcoming' %}<span class="b b-yellow">upcoming</span>
+              {% elif a.status == 'ended' %}<span class="b b-blue">ended</span>
+              {% else %}<span class="b b-red">cancelled</span>{% endif %}
+            </td>
+          </tr>
+          {% empty %}
+          <tr class="empty-row"><td colspan="6">No auctions yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -9,5 +9,8 @@ urlpatterns = [
     path('marketplace/',  include('apps.marketplace.api_urls')),
     path('pedigree/',     include('apps.pedigrees.api_urls')),
     path('feed/',         include('apps.feed_generator.api_urls')),
-    path('messages/',     include('apps.messaging.api_urls')),
+    path('messages/',      include('apps.messaging.api_urls')),
+    path('auctions/',      include('apps.auctions.api_urls')),
+    path('wall/',          include('apps.wall.api_urls')),
+    path('notifications/', include('apps.notifications.api_urls')),
 ]

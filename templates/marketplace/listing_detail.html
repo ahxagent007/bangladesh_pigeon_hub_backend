@@ -7,20 +7,60 @@
     <!-- Left: Images + Details -->
     <div>
       <!-- Image Gallery -->
+      <style>
+        .auth-badge { display:inline-flex; align-items:center; gap:4px; padding:3px 9px;
+                      border-radius:999px; font-size:11px; font-weight:700; cursor:help;
+                      line-height:1.4; white-space:nowrap; }
+        .auth-raw  { background:#d1fae5; color:#065f46; }
+        .auth-low  { background:#fef3c7; color:#92400e; }
+        .auth-mid  { background:#ffedd5; color:#9a3412; }
+        .auth-high { background:#fee2e2; color:#991b1b; }
+        .img-auth-bar { display:flex; align-items:center; gap:8px; margin-top:6px;
+                        font-size:12px; color:var(--text-muted); }
+      </style>
       <div style="margin-bottom:24px;">
         {% with images=listing.pigeon.images.all %}
           {% if images %}
-            <img id="mainImg" src="{{ images.0.image.url }}"
-                 style="width:100%;height:400px;object-fit:cover;border-radius:var(--radius);
-                        border:1px solid var(--border);"
-                 alt="{{ listing.title }}">
+            <!-- Main image -->
+            <div style="position:relative;">
+              <img id="mainImg" src="{{ images.0.image.url }}"
+                   style="width:100%;height:400px;object-fit:cover;border-radius:var(--radius);
+                          border:1px solid var(--border);"
+                   alt="{{ listing.title }}">
+            </div>
+            <!-- Auth badge for the currently selected image -->
+            <div class="img-auth-bar" id="mainAuthBar">
+              {% with pri=images.0 %}
+                {% if pri.edit_score is not None %}
+                  <span class="auth-badge {% if pri.edit_score <= 20 %}auth-raw{% elif pri.edit_score <= 50 %}auth-low{% elif pri.edit_score <= 75 %}auth-mid{% else %}auth-high{% endif %}"
+                        title="{{ pri.edit_notes }}">
+                    {% if pri.edit_score <= 20 %}📷 Raw{% else %}✏️ {{ pri.edit_score }}% edited{% endif %}
+                  </span>
+                  <span>{{ pri.edit_notes }}</span>
+                {% endif %}
+              {% endwith %}
+            </div>
             {% if images|length > 1 %}
-              <div style="display:flex;gap:8px;margin-top:8px;overflow-x:auto;">
+              <div style="display:flex;gap:8px;margin-top:8px;overflow-x:auto;padding-bottom:4px;">
                 {% for img in images %}
-                  <img src="{{ img.image.url }}" onclick="document.getElementById('mainImg').src=this.src"
-                       style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius);
-                              cursor:pointer;border:2px solid transparent;opacity:.7;"
-                       onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">
+                  <div style="flex-shrink:0;text-align:center;">
+                    <img src="{{ img.image.url }}"
+                         data-score="{{ img.edit_score|default:'' }}"
+                         data-notes="{{ img.edit_notes|default:'' }}"
+                         onclick="switchImg(this)"
+                         style="width:72px;height:72px;object-fit:cover;border-radius:var(--radius);
+                                cursor:pointer;border:2px solid transparent;opacity:.7;"
+                         onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=.7">
+                    {% if img.edit_score is not None %}
+                      <div style="margin-top:3px;">
+                        <span class="auth-badge {% if img.edit_score <= 20 %}auth-raw{% elif img.edit_score <= 50 %}auth-low{% elif img.edit_score <= 75 %}auth-mid{% else %}auth-high{% endif %}"
+                              style="font-size:10px;padding:2px 6px;"
+                              title="{{ img.edit_notes }}">
+                          {% if img.edit_score <= 20 %}📷{% else %}✏️ {{ img.edit_score }}%{% endif %}
+                        </span>
+                      </div>
+                    {% endif %}
+                  </div>
                 {% endfor %}
               </div>
             {% endif %}
@@ -32,6 +72,20 @@
           {% endif %}
         {% endwith %}
       </div>
+      <script>
+        function switchImg(el) {
+          document.getElementById('mainImg').src = el.src;
+          var score = el.dataset.score;
+          var notes = el.dataset.notes;
+          var bar   = document.getElementById('mainAuthBar');
+          if (score === '') { bar.innerHTML = ''; return; }
+          var s = parseInt(score);
+          var cls = s <= 20 ? 'auth-raw' : s <= 50 ? 'auth-low' : s <= 75 ? 'auth-mid' : 'auth-high';
+          var lbl = s <= 20 ? '📷 Raw' : '✏️ ' + s + '% edited';
+          bar.innerHTML = '<span class="auth-badge ' + cls + '" title="' + notes + '">' + lbl + '</span>' +
+                          (notes ? '<span>' + notes + '</span>' : '');
+        }
+      </script>
 
       <!-- Pigeon Details -->
       <div class="card" style="padding:24px;margin-bottom:24px;">

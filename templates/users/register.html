@@ -1,11 +1,13 @@
 {% extends 'base.html' %}
 {% block title %}Join BPH{% endblock %}
+
 {% block content %}
 <div class="container">
   <div class="form-card card">
     <h2 style="margin-bottom:24px;font-size:22px;">Create your account</h2>
-    <form method="post" novalidate>
+    <form method="post" novalidate id="register-form">
       {% csrf_token %}
+      <input type="hidden" name="g-recaptcha-response" id="register-recaptcha-token">
       <div class="form-group">
         <label>Username or Phone Number</label>
         <input type="text" name="username" value="{{ form.username.value|default:'' }}"
@@ -56,4 +58,19 @@
     </p>
   </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  document.getElementById('register-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = this;
+    grecaptcha.ready(function() {
+      grecaptcha.execute(RECAPTCHA_SITE_KEY, {action: 'register'}).then(function(token) {
+        document.getElementById('register-recaptcha-token').value = token;
+        form.submit();
+      });
+    });
+  });
+</script>
 {% endblock %}

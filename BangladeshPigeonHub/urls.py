@@ -20,6 +20,7 @@ urlpatterns = [
     path('contests/',      include('apps.contests.urls')),
     path('users/',         include('apps.users.profile_urls')),
     path('auctions/',      include('apps.auctions.urls')),
+    path('panel/',         include('apps.panel.urls')),
 
     # ── REST API ──
     path('api/',        include('apps.api_urls')),

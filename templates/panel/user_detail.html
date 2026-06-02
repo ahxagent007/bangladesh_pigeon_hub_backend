@@ -1,0 +1,197 @@
+{% extends 'panel/base.html' %}
+{% block page_title %}User: {{ u.username }}{% endblock %}
+
+{% block content %}
+<a href="/panel/users/" class="back-link">← Back to Users</a>
+
+<div class="detail-wrap">
+
+  <!-- Left: profile -->
+  <div style="display:flex;flex-direction:column;gap:12px;">
+
+    <div class="profile-card">
+      {% if u.avatar %}
+        <img src="{{ u.avatar.url }}" class="avatar-lg" alt="{{ u.username }}">
+      {% else %}
+        <div class="avatar-lg-ph">{{ u.username|first|upper }}</div>
+      {% endif %}
+      <div style="font-size:17px;font-weight:700;">{{ u.username }}</div>
+      <div style="color:var(--muted);font-size:13px;margin-top:2px;">{{ u.email|default:"No email" }}</div>
+      <div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center;">
+        {% if u.is_superuser %}<span class="b b-orange">superuser</span>{% endif %}
+        {% if u.is_staff %}<span class="b b-blue">staff</span>{% endif %}
+        {% if u.is_verified %}<span class="b b-green">verified ✓</span>{% endif %}
+        {% if not u.is_active %}<span class="b b-red">banned</span>
+        {% else %}<span class="b b-gray">active</span>{% endif %}
+      </div>
+    </div>
+
+    <div class="card" style="padding:14px;">
+      <table class="info-table" style="width:100%;">
+        <tr><td>Phone</td><td>{{ u.phone|default:"—" }}</td></tr>
+        <tr><td>Location</td><td>{{ u.location|default:"—" }}</td></tr>
+        <tr><td>Language</td><td>{{ u.get_language_display }}</td></tr>
+        <tr><td>Joined</td><td>{{ u.date_joined|date:"M d, Y" }}</td></tr>
+        <tr><td>Last login</td><td>{{ u.last_login|date:"M d, Y"|default:"Never" }}</td></tr>
+      </table>
+      {% if u.bio %}
+      <p style="margin-top:10px;font-size:13px;color:var(--muted);border-top:1px solid var(--border);padding-top:10px;">{{ u.bio }}</p>
+      {% endif %}
+    </div>
+
+    {% if not u.is_superuser %}
+    <div class="card" style="padding:14px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Quick Actions</div>
+      <form method="post" action="/panel/users/{{ u.id }}/toggle/" style="display:flex;flex-direction:column;gap:8px;">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="/panel/users/{{ u.id }}/">
+        <button name="action" value="active" class="btn {% if u.is_active %}btn-warn{% else %}btn-success{% endif %}">
+          {% if u.is_active %}Ban User{% else %}Unban User{% endif %}
+        </button>
+        <button name="action" value="verified" class="btn {% if u.is_verified %}btn-ghost{% else %}btn-primary{% endif %}">
+          {% if u.is_verified %}Remove Verification{% else %}Verify User{% endif %}
+        </button>
+        {% if request.user.is_superuser %}
+        <button name="action" value="staff" class="btn btn-ghost">
+          {% if u.is_staff %}Revoke Staff{% else %}Make Staff{% endif %}
+        </button>
+        {% endif %}
+      </form>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- Right: activity tabs -->
+  <div style="display:flex;flex-direction:column;gap:14px;">
+
+    <!-- Listings -->
+    <div class="card">
+      <div class="card-head"><h2>Listings ({{ listings|length }})</h2></div>
+      <div class="t-wrap">
+        <table>
+          <thead><tr><th>Title</th><th>Price</th><th>District</th><th>Views</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for l in listings %}
+            <tr>
+              <td class="trunc">{{ l.title }}</td>
+              <td>৳{{ l.price|floatformat:0 }}</td>
+              <td style="font-size:12px;">{{ l.get_district_display }}</td>
+              <td>{{ l.views_count }}</td>
+              <td>
+                {% if l.status == 'active' %}<span class="b b-green">active</span>
+                {% elif l.status == 'sold' %}<span class="b b-blue">sold</span>
+                {% elif l.status == 'reserved' %}<span class="b b-yellow">reserved</span>
+                {% else %}<span class="b b-gray">inactive</span>{% endif %}
+              </td>
+              <td style="font-size:12px;color:var(--muted);">{{ l.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr class="empty-row"><td colspan="6">No listings.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Auctions -->
+    <div class="card">
+      <div class="card-head"><h2>Auctions Hosted ({{ auctions|length }})</h2></div>
+      <div class="t-wrap">
+        <table>
+          <thead><tr><th>Title</th><th>Start Price</th><th>Current</th><th>Bids</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for a in auctions %}
+            <tr>
+              <td class="trunc">{{ a.title }}</td>
+              <td>৳{{ a.starting_price|floatformat:0 }}</td>
+              <td>৳{{ a.display_price|floatformat:0 }}</td>
+              <td>{{ a.bid_count }}</td>
+              <td>
+                {% if a.status == 'live' %}<span class="b b-green">live</span>
+                {% elif a.status == 'upcoming' %}<span class="b b-yellow">upcoming</span>
+                {% elif a.status == 'ended' %}<span class="b b-blue">ended</span>
+                {% else %}<span class="b b-red">cancelled</span>{% endif %}
+              </td>
+            </tr>
+            {% empty %}
+            <tr class="empty-row"><td colspan="5">No auctions hosted.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Bids placed -->
+    <div class="card">
+      <div class="card-head"><h2>Bids Placed ({{ bids|length }})</h2></div>
+      <div class="t-wrap">
+        <table>
+          <thead><tr><th>Auction</th><th>Amount</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for b in bids %}
+            <tr>
+              <td class="trunc">{{ b.auction.title }}</td>
+              <td>৳{{ b.amount|floatformat:0 }}</td>
+              <td style="font-size:12px;color:var(--muted);">{{ b.created_at|date:"M d, Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr class="empty-row"><td colspan="3">No bids placed.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sent offers -->
+    <div class="card">
+      <div class="card-head"><h2>Sent Offers ({{ offers_sent|length }})</h2></div>
+      <div class="t-wrap">
+        <table>
+          <thead><tr><th>Listing</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for o in offers_sent %}
+            <tr>
+              <td class="trunc">{{ o.listing.title }}</td>
+              <td>৳{{ o.amount|floatformat:0 }}</td>
+              <td>
+                {% if o.status == 'pending' %}<span class="b b-yellow">pending</span>
+                {% elif o.status == 'accepted' %}<span class="b b-green">accepted</span>
+                {% elif o.status == 'rejected' %}<span class="b b-red">rejected</span>
+                {% else %}<span class="b b-gray">{{ o.status }}</span>{% endif %}
+              </td>
+              <td style="font-size:12px;color:var(--muted);">{{ o.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr class="empty-row"><td colspan="4">No offers sent.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Wall posts -->
+    <div class="card">
+      <div class="card-head"><h2>Wall Posts ({{ posts|length }})</h2></div>
+      <div class="t-wrap">
+        <table>
+          <thead><tr><th>Content</th><th>Likes</th><th>Comments</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for p in posts %}
+            <tr>
+              <td class="trunc" style="max-width:320px;">{{ p.content }}</td>
+              <td>{{ p.like_count }}</td>
+              <td>{{ p.comment_count }}</td>
+              <td style="font-size:12px;color:var(--muted);">{{ p.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr class="empty-row"><td colspan="4">No wall posts.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

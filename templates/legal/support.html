@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% block title %}Support — BD Pigeon Hub{% endblock %}
+{% block content %}
+<style>
+  .support-page { max-width: 780px; margin: 40px auto; padding: 0 16px 60px; }
+  .support-page h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+  .support-page .sub { color: var(--text-muted); font-size: 15px; margin-bottom: 36px; }
+  .support-page h2 { font-size: 17px; font-weight: 700; margin: 36px 0 14px; }
+  .support-page p, .support-page li { font-size: 14px; line-height: 1.8; color: #374151; margin-bottom: 8px; }
+  .support-page ul { padding-left: 20px; margin-bottom: 12px; }
+  .support-page a { color: var(--primary); }
+
+  /* Contact cards */
+  .contact-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin-bottom: 36px; }
+  .contact-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; text-align: center; }
+  .contact-card .icon { font-size: 32px; margin-bottom: 10px; }
+  .contact-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .contact-card p { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; line-height: 1.5; }
+  .contact-card a.btn { display: inline-block; background: var(--primary); color: #fff; padding: 8px 18px; border-radius: var(--radius); font-size: 13px; text-decoration: none; font-weight: 600; }
+  .contact-card a.btn:hover { background: var(--primary-dark); }
+  .response-note { background: #d1fae5; border-radius: var(--radius); padding: 12px 16px; font-size: 13px; color: #065f46; margin-bottom: 28px; }
+
+  /* FAQ */
+  .faq-item { border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; }
+  .faq-q { width: 100%; text-align: left; background: var(--surface); border: none; padding: 16px 20px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+  .faq-q:hover { background: #f9fafb; }
+  .faq-q .arrow { transition: transform .2s; font-style: normal; }
+  .faq-q.open .arrow { transform: rotate(180deg); }
+  .faq-a { display: none; padding: 0 20px 16px; font-size: 13.5px; line-height: 1.7; color: #374151; border-top: 1px solid var(--border); }
+  .faq-a.open { display: block; }
+
+  /* Legal links */
+  .legal-links { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+  .legal-links a { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 16px; font-size: 13px; text-decoration: none; color: var(--text); }
+  .legal-links a:hover { border-color: var(--primary); color: var(--primary); }
+</style>
+
+<div class="support-page">
+  <h1>Support Center</h1>
+  <p class="sub">We're here to help. Find answers below or reach us directly.</p>
+
+  <!-- Contact options -->
+  <div class="contact-grid">
+    <div class="contact-card">
+      <div class="icon">✉️</div>
+      <h3>Email Support</h3>
+      <p>For account issues, bugs, or data requests. We read every message.</p>
+      <a href="mailto:alphacuetechnologies@gmail.com" class="btn">Send Email</a>
+    </div>
+    <div class="contact-card">
+      <div class="icon">🗑️</div>
+      <h3>Delete My Account</h3>
+      <p>Request permanent deletion of your account and all your data.</p>
+      <a href="/legal/delete-account/" class="btn">Delete Account</a>
+    </div>
+    <div class="contact-card">
+      <div class="icon">📄</div>
+      <h3>Report a Listing</h3>
+      <p>Spotted a fake, misleading, or fraudulent listing? Let us know.</p>
+      <a href="mailto:alphacuetechnologies@gmail.com?subject=Report%20a%20Listing" class="btn">Report</a>
+    </div>
+  </div>
+
+  <div class="response-note">
+    ✅ &nbsp;We aim to respond to all emails within <strong>2 business days</strong>.
+    Email us at <a href="mailto:alphacuetechnologies@gmail.com">alphacuetechnologies@gmail.com</a>
+    with your username in the subject line for faster help.
+  </div>
+
+  <!-- FAQ -->
+  <h2>Frequently Asked Questions</h2>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">
+      How do I create an account? <i class="arrow">▾</i>
+    </button>
+    <div class="faq-a">
+      Download the BD Pigeon Hub app from the Google Play Store or Apple App Store, then tap <strong>Join Free</strong> on the welcome screen. Alternatively, visit <a href="/auth/register/">bdpigeonhub.com/auth/register/</a> on the web. Registration is free and only takes a minute.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">
+      I forgot my password. How do I reset it? <i class="arrow">▾</i>
+    </button>
+    <div class="faq-a">
+      On the login screen, tap <strong>Forgot password?</strong> and enter your registered email address. You will receive a password reset link within a few minutes. Check your spam folder if it doesn't arrive.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">
+      How do I list a pigeon for sale? <i class="arrow">▾</i>
+    </button>
+    <div class="faq-a">
+      Once you are logged in: (1) Add the pigeon to your flock via <strong>My Pigeons → Add Pigeon</strong>. (2) Go to <strong>Marketplace → Sell a Pigeon</strong> and select that pigeon. (3) Fill in the price, location, and district. Your listing will go live immediately. Listing is always free — we charge no commission.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">
+      How do payments work? <i class="arrow">▾</i>
+    </button>
+    <div class="faq-a">
+      BD Pigeon Hub is a listing platform — we do not process payments. Once a buyer and seller agree on a price, they arrange payment directly via <strong>bKash, Nagad, or Rocket</strong>. The buyer then enters the transaction ID (TXN ID) on the platform as a record. The seller verifies receipt in their own mobile banking app. BD Pigeon Hub is not responsible for payment disputes.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">
+      What does the "edit score" on photos mean? <i class="arrow">▾</i>
+    </button>
+    <div class="faq-a">
+      When you upload a photo, our system analyses the image's technical data (EXIF metadata and compression patterns) to estimate how much the image may have been digitally edited. A green <strong>📷 Raw</strong> badge means the photo appears to be straight from a camera. An orange or red <strong>✏️ X% edited</strong> badge suggests the photo may have been processed with editing software. This is a transparency feature to help buyers trust what they see — it is not a definitive forensic judgment.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">
+      How do auctions work? <i class="arrow">▾</i>
+    </button>
+    <div class="faq-a">
+      Sellers can list a pigeon in a timed auction with a starting price and optional reserve price. Registered users can place bids — each bid must meet or exceed the minimum increment. If a bid is placed in the final minutes, the auction automatically extends by a few minutes (anti-snipe protection). When the auction ends, the highest bidder wins and both parties arrange delivery and payment directly.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">
+      How do I report a fake listing or fraudulent user? <i class="arrow">▾</i>
+    </button>
+    <div class="faq-a">
+      Email us at <a href="mailto:alphacuetechnologies@gmail.com?subject=Report%20Fraudulent%20Listing">alphacuetechnologies@gmail.com</a> with the subject <em>"Report Fraudulent Listing"</em>. Include the listing title, seller username, and a brief description of the issue. We investigate all reports and will act within 48 hours for urgent fraud cases.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">
+      How do I delete my account and data? <i class="arrow">▾</i>
+    </button>
+    <div class="faq-a">
+      See our full <a href="/legal/delete-account/">Account Deletion page</a> for step-by-step instructions. You can delete directly from the app settings, or email us with your username. All personal data is removed within 30 days.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">
+      Is BD Pigeon Hub available outside Bangladesh? <i class="arrow">▾</i>
+    </button>
+    <div class="faq-a">
+      The platform is primarily designed for users in Bangladesh. You can browse listings from anywhere in the world, but the marketplace, payment methods, and community features are optimised for the Bangladesh pigeon community. Payment methods (bKash, Nagad, Rocket) are available in Bangladesh only.
+    </div>
+  </div>
+
+  <div class="faq-item">
+    <button class="faq-q" onclick="toggleFaq(this)">
+      The app is crashing or a feature isn't working. What should I do? <i class="arrow">▾</i>
+    </button>
+    <div class="faq-a">
+      First, try these steps: (1) Force-close and restart the app. (2) Check your internet connection. (3) Update the app to the latest version from the App Store / Play Store. If the problem persists, email us at <a href="mailto:alphacuetechnologies@gmail.com">alphacuetechnologies@gmail.com</a> with your device model, operating system version, and a description of what happened. Screenshots or screen recordings are very helpful.
+    </div>
+  </div>
+
+  <!-- Legal pages -->
+  <h2>Legal Documents</h2>
+  <div class="legal-links">
+    <a href="/legal/privacy/">🔒 Privacy Policy</a>
+    <a href="/legal/terms/">📋 Terms of Service</a>
+    <a href="/legal/delete-account/">🗑️ Data Deletion</a>
+  </div>
+</div>
+
+{% block extra_js %}
+<script>
+  function toggleFaq(btn) {
+    var answer = btn.nextElementSibling;
+    var isOpen = answer.classList.contains('open');
+    // Close all
+    document.querySelectorAll('.faq-a.open').forEach(a => a.classList.remove('open'));
+    document.querySelectorAll('.faq-q.open').forEach(b => b.classList.remove('open'));
+    // Open clicked (unless it was already open)
+    if (!isOpen) {
+      answer.classList.add('open');
+      btn.classList.add('open');
+    }
+  }
+</script>
+{% endblock %}
+{% endblock %}

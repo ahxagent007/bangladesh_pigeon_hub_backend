@@ -2,6 +2,25 @@ from rest_framework import serializers
 from .models import Post, PostImage, Like, Comment
 
 
+class CommentSerializer(serializers.ModelSerializer):
+    author_name   = serializers.CharField(source='author.username', read_only=True)
+    author_avatar = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = Comment
+        fields = ('id', 'content', 'author', 'author_name', 'author_avatar', 'created_at')
+        read_only_fields = ('author', 'created_at')
+
+    def get_author_avatar(self, obj):
+        req = self.context.get('request')
+        if obj.author.avatar:
+            url = obj.author.avatar.url
+            if req and not url.startswith('http'):
+                return req.build_absolute_uri(url)
+            return url
+        return None
+
+
 class PostImageSerializer(serializers.ModelSerializer):
     edit_label = serializers.SerializerMethodField()
 

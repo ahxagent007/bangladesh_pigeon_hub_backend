@@ -6,4 +6,5 @@ urlpatterns = [
     path('<int:pk>/',   api_views.AuctionDetailView.as_view(),name='api-auction-detail'),
     path('<int:pk>/bid/', api_views.PlaceBidView.as_view(),   name='api-auction-bid'),
     path('<int:pk>/poll/', api_views.AuctionPollView.as_view(),name='api-auction-poll'),
+    path('<int:pk>/watch/', api_views.ToggleWatchView.as_view(),name='api-auction-watch'),
 ]

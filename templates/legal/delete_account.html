@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Delete Your Account — BD Pigeon Hub{% endblock %}
+{% block content %}
+<style>
+  .legal-page { max-width: 720px; margin: 40px auto; padding: 0 16px 60px; }
+  .legal-page h1 { font-size: 26px; font-weight: 800; margin-bottom: 6px; }
+  .legal-page .meta { color: var(--text-muted); font-size: 13px; margin-bottom: 32px; }
+  .legal-page h2 { font-size: 17px; font-weight: 700; margin: 32px 0 10px; color: var(--primary); }
+  .legal-page p, .legal-page li { font-size: 14px; line-height: 1.8; color: #374151; margin-bottom: 10px; }
+  .legal-page ul, .legal-page ol { padding-left: 20px; margin-bottom: 12px; }
+  .legal-page li { margin-bottom: 4px; }
+  .legal-page a { color: var(--primary); }
+  .step-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px 24px; margin-bottom: 14px; display: flex; gap: 16px; align-items: flex-start; }
+  .step-num { background: var(--primary); color: #fff; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; flex-shrink: 0; margin-top: 2px; }
+  .step-body h3 { font-size: 14px; font-weight: 700; margin: 0 0 4px; }
+  .step-body p { font-size: 13.5px; color: var(--text-muted); margin: 0; line-height: 1.6; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin: 16px 0; }
+  .data-table th { background: #f9fafb; padding: 10px 12px; text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted); border-bottom: 1px solid var(--border); }
+  .data-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  .data-table tr:last-child td { border-bottom: none; }
+  .badge-del { background: #fee2e2; color: #991b1b; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .badge-keep { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+  .email-box { background: #f9fafb; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin: 16px 0; }
+  .email-box code { background: #e5e7eb; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+</style>
+
+<div class="legal-page">
+  <h1>Account &amp; Data Deletion</h1>
+  <p class="meta">BD Pigeon Hub &nbsp;·&nbsp; AlphaCue Technologies &nbsp;·&nbsp; Last updated: June 6, 2026</p>
+
+  <p>You have the right to delete your BD Pigeon Hub account and all associated personal data at any time. This page explains exactly what happens when you request deletion and how to do it.</p>
+
+  <h2>How to Delete Your Account</h2>
+  <p>There are two ways to request account deletion:</p>
+
+  <h3>Option 1 — From the App (Recommended)</h3>
+
+  <div class="step-card">
+    <div class="step-num">1</div>
+    <div class="step-body">
+      <h3>Open the app and go to your Dashboard</h3>
+      <p>Tap the <strong>Me</strong> tab in the bottom navigation bar, then tap <strong>Profile Settings</strong>.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="step-num">2</div>
+    <div class="step-body">
+      <h3>Tap "Delete Account"</h3>
+      <p>Scroll to the bottom of the Profile Settings screen. Tap <strong>Delete Account</strong> (shown in red).</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="step-num">3</div>
+    <div class="step-body">
+      <h3>Confirm your password and confirm deletion</h3>
+      <p>Enter your password to verify your identity, then tap <strong>Permanently Delete</strong>. This action cannot be undone.</p>
+    </div>
+  </div>
+  <div class="step-card">
+    <div class="step-num">4</div>
+    <div class="step-body">
+      <h3>Done — you will be signed out immediately</h3>
+      <p>Your account is queued for deletion. All personal data will be permanently removed within <strong>30 days</strong>.</p>
+    </div>
+  </div>
+
+  <h3 style="margin-top:28px;">Option 2 — By Email Request</h3>
+  <p>If you cannot access the app, send an email from the email address registered with your account:</p>
+  <div class="email-box">
+    <strong>To:</strong> <a href="mailto:alphacuetechnologies@gmail.com">alphacuetechnologies@gmail.com</a><br>
+    <strong>Subject:</strong> <code>Account Deletion Request — [your username]</code><br><br>
+    <strong>Include in the body:</strong>
+    <ul style="margin:8px 0 0;">
+      <li>Your registered username</li>
+      <li>Your registered email address</li>
+      <li>Confirmation that you want your account and all data permanently deleted</li>
+    </ul>
+  </div>
+  <p>We will verify your identity and process the request within <strong>30 days</strong>. You will receive a confirmation email when deletion is complete.</p>
+
+  <h2>What Gets Deleted</h2>
+  <p>The following table shows exactly what data is deleted and what (if anything) is retained:</p>
+
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Data Type</th>
+        <th>Action</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Account profile (username, email, password, phone, bio, avatar)</td>
+        <td><span class="badge-del">Deleted</span></td>
+        <td>Within 30 days</td>
+      </tr>
+      <tr>
+        <td>Your pigeon profiles and photos</td>
+        <td><span class="badge-del">Deleted</span></td>
+        <td>Images removed from server storage</td>
+      </tr>
+      <tr>
+        <td>Your active listings</td>
+        <td><span class="badge-del">Deleted</span></td>
+        <td>Listings marked inactive, then removed</td>
+      </tr>
+      <tr>
+        <td>Your wall posts and images</td>
+        <td><span class="badge-del">Deleted</span></td>
+        <td>All post images removed from server</td>
+      </tr>
+      <tr>
+        <td>Your comments and likes</td>
+        <td><span class="badge-del">Deleted</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>Your notifications</td>
+        <td><span class="badge-del">Deleted</span></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td>Your pedigree records</td>
+        <td><span class="badge-del">Deleted</span></td>
+        <td>Linked pigeons' sire/dam fields set to null</td>
+      </tr>
+      <tr>
+        <td>Your private messages</td>
+        <td><span class="badge-del">Deleted</span></td>
+        <td>Full conversation history removed for all participants</td>
+      </tr>
+      <tr>
+        <td>Your bids on auctions</td>
+        <td><span class="badge-del">Deleted</span></td>
+        <td>If auction is still live, it is cancelled first</td>
+      </tr>
+      <tr>
+        <td>Offer and payment TXN records you were party to</td>
+        <td><span class="badge-keep">Retained 1 year</span></td>
+        <td>Required for financial record-keeping and dispute resolution. Retained in anonymised form.</td>
+      </tr>
+      <tr>
+        <td>Server access logs containing your IP address</td>
+        <td><span class="badge-keep">Retained 90 days</span></td>
+        <td>Standard security log retention. Deleted after 90 days.</td>
+      </tr>
+      <tr>
+        <td>Google Analytics data</td>
+        <td><span class="badge-keep">Retained by Google</span></td>
+        <td>Anonymised aggregate data — cannot be individually identified or deleted by us.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Timeline</h2>
+  <ul>
+    <li><strong>Immediately:</strong> Your account is deactivated. You are signed out on all devices. Your public profile and listings are no longer visible.</li>
+    <li><strong>Within 30 days:</strong> All personal data listed as "Deleted" in the table above is permanently removed from our databases and servers.</li>
+    <li><strong>Confirmation:</strong> You will receive an email confirming completion of deletion.</li>
+  </ul>
+
+  <h2>Before You Delete</h2>
+  <p>Consider the following before deleting your account:</p>
+  <ul>
+    <li><strong>Active listings:</strong> Any active pigeon listings will be removed. Interested buyers will no longer be able to contact you through the platform.</li>
+    <li><strong>Active auctions:</strong> If you have an ongoing live auction, deletion will cancel it. Bidders will be notified.</li>
+    <li><strong>Won auctions:</strong> If you have won an auction and not yet completed the transaction, resolve this before deleting your account.</li>
+    <li><strong>Accepted offers:</strong> Complete any accepted offers and payment confirmations before requesting deletion.</li>
+    <li><strong>No recovery:</strong> Deleted accounts cannot be recovered. Your username will be permanently released.</li>
+  </ul>
+
+  <h2>Contact</h2>
+  <p>For questions about the deletion process:</p>
+  <ul>
+    <li><strong>Email:</strong> <a href="mailto:alphacuetechnologies@gmail.com">alphacuetechnologies@gmail.com</a></li>
+    <li><strong>Support:</strong> <a href="/legal/support/">bdpigeonhub.com/legal/support/</a></li>
+  </ul>
+</div>
+{% endblock %}

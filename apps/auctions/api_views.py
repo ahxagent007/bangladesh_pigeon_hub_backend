@@ -129,3 +129,20 @@ class AuctionPollView(APIView):
             'min_bid':       str(auction.min_next_bid),
             'reserve_met':   auction.reserve_met,
         })
+
+
+class ToggleWatchView(APIView):
+    """POST /api/auctions/<id>/watch/  — toggle watching an auction."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, pk):
+        auction = Auction.objects.get(pk=pk)
+        watch, created = AuctionWatch.objects.get_or_create(
+            auction=auction, user=request.user
+        )
+        if not created:
+            watch.delete()
+        return Response({
+            'watching':      created,
+            'watcher_count': auction.watchers.count(),
+        })

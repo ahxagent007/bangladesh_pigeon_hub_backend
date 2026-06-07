@@ -40,6 +40,7 @@ LOCAL_APPS = [
     'apps.contests',
     'apps.auctions',
     'apps.panel',
+    'apps.appconfig',
 ]
 
 LANGUAGE_CODE = 'en-us'

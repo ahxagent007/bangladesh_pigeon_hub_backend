@@ -3,6 +3,7 @@ from . import api_views
 
 urlpatterns = [
     path('',              api_views.ConversationListView.as_view(), name='api-conversations'),
+    path('start/',        api_views.StartConversationView.as_view(), name='api-start-conversation'),
     path('<int:pk>/',     api_views.ConversationDetailView.as_view(), name='api-conversation'),
     path('<int:pk>/send/', api_views.SendMessageView.as_view(),      name='api-send-message'),
 ]

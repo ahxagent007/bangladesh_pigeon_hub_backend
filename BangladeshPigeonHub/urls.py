@@ -21,6 +21,8 @@ urlpatterns = [
     path('users/',         include('apps.users.profile_urls')),
     path('auctions/',      include('apps.auctions.urls')),
     path('panel/',         include('apps.panel.urls')),
+    path('app/',           include('apps.appconfig.urls')),
+    path('legal/',         include('apps.legal.urls')),
 
     # ── REST API ──
     path('api/',        include('apps.api_urls')),

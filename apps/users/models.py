@@ -32,7 +32,7 @@ class User(AbstractUser):
 
     @property
     def listing_count(self):
-        return self.listings.filter(is_active=True).count()
+        return self.listings.filter(status='active').count()
 
     @property
     def avg_rating(self):

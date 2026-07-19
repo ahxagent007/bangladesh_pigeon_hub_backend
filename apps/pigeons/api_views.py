@@ -72,3 +72,23 @@ class BreedListView(generics.ListAPIView):
     queryset = Breed.objects.all()
     serializer_class = BreedSerializer
     permission_classes = [permissions.AllowAny]
+
+class SiteStatsView(APIView):
+    """GET /api/stats/ — public platform counts for the app home stats strip."""
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        from django.utils import timezone
+        from django.contrib.auth import get_user_model
+        from apps.marketplace.models import Listing
+        from apps.auctions.models import Auction
+
+        Auction.objects.filter(
+            status='upcoming', start_time__lte=timezone.now()).update(status='live')
+
+        return Response({
+            'sellers':         get_user_model().objects.filter(is_active=True).count(),
+            'active_listings': Listing.objects.filter(status='active').count(),
+            'live_auctions':   Auction.objects.filter(status='live').count(),
+            'breeds':          Breed.objects.count(),
+        })

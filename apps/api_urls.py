@@ -1,7 +1,10 @@
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from apps.pigeons.api_views import SiteStatsView
+
 urlpatterns = [
+    path('stats/',        SiteStatsView.as_view(),           name='api-stats'),
     path('auth/login/',   TokenObtainPairView.as_view(),  name='api-login'),
     path('auth/refresh/', TokenRefreshView.as_view(),      name='api-token-refresh'),
     path('auth/',         include('apps.users.api_urls')),

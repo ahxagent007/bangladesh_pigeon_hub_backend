@@ -32,6 +32,19 @@ class MeView(APIView):
         return Response(serializer.data)
 
 
+class DeleteAccountView(APIView):
+    """Permanently delete the authenticated user's account (App Store 5.1.1)."""
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        password = request.data.get('password') or ''
+        if not request.user.check_password(password):
+            return Response({'password': ['Incorrect password.']}, status=400)
+
+        request.user.delete()
+        return Response(status=204)
+
+
 class PublicProfileView(APIView):
     permission_classes = [permissions.AllowAny]
 

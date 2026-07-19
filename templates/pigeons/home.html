@@ -129,7 +129,7 @@
           </div>
         </div>
         <div class="hv-stat-bubble">
-          <div style="font-size:20px;font-weight:800;color:#2563eb;">500+</div>
+          <div style="font-size:20px;font-weight:800;color:#2563eb;">{{ stats.sellers }}</div>
           <div style="font-size:11px;color:#6b7280;">Happy Sellers</div>
         </div>
       </div>
@@ -144,19 +144,25 @@
     <div class="stats-inner">
       <div class="stat-item">
         <div class="stat-icon">🐦</div>
-        <div class="stat-num">{{ featured|length }}+</div>
+        <div class="stat-num">{{ stats.active_listings }}</div>
         <div class="stat-lbl">Active Listings</div>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-item">
+        <div class="stat-icon">🔨</div>
+        <div class="stat-num">{{ stats.live_auctions }}</div>
+        <div class="stat-lbl">Live Auctions</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
         <div class="stat-icon">🏷️</div>
-        <div class="stat-num">{{ breeds|length }}+</div>
+        <div class="stat-num">{{ stats.breeds }}</div>
         <div class="stat-lbl">Pigeon Breeds</div>
       </div>
       <div class="stat-divider"></div>
       <div class="stat-item">
         <div class="stat-icon">👥</div>
-        <div class="stat-num">500+</div>
+        <div class="stat-num">{{ stats.sellers }}</div>
         <div class="stat-lbl">Registered Sellers</div>
       </div>
       <div class="stat-divider"></div>

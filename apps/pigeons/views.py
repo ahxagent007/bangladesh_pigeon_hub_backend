@@ -46,6 +46,15 @@ def home_view(request):
         .order_by('start_time')[:4]
     )
 
+    from django.contrib.auth import get_user_model
+    from apps.marketplace.models import Listing
+    stats = {
+        'sellers':         get_user_model().objects.filter(is_active=True).count(),
+        'active_listings': Listing.objects.filter(status='active').count(),
+        'live_auctions':   Auction.objects.filter(status='live').count(),
+        'breeds':          breeds.count(),
+    }
+
     return render(request, 'pigeons/home.html', {
         'featured':          featured,
         'breeds':            breeds,
@@ -53,6 +62,7 @@ def home_view(request):
         'liked_post_ids':    liked_post_ids,
         'live_auctions':     live_auctions,
         'upcoming_auctions': upcoming_auctions,
+        'stats':             stats,
     })
 
 @login_required
